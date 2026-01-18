@@ -13,26 +13,40 @@ namespace SwitchManagment.API.Repository.SqlLite.Implementations
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<int> Add(SwitchEntity add)
+        public async Task<int> Add(SwitchEntity switchEntity, CancellationToken cancellationToken = default)
         {
-            var result = await _context.AddAsync(add);
+            try
+            {
+                var result = await _context.AddAsync(switchEntity, cancellationToken);
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
-            return result.Entity.Id;
+                return result.Entity.Id;
+            }
+            catch(DbUpdateException e)
+            {
+                throw;
+            }
         }
 
-        public async Task DeleteById(int id)
+        public async Task DeleteById(int id, CancellationToken cancellationToken = default)
         {
-            _context.Remove(new SwitchEntity { Id = id });
+            try
+            {
+                _context.Remove(new SwitchEntity { Id = id });
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException e) 
+            {
+                throw;
+            }
         }
 
-        public async Task<IEnumerable<SwitchEntity>> GetAll() =>
-            await _context.Switches.ToListAsync();
+        public async Task<IEnumerable<SwitchEntity>> GetAll(CancellationToken cancellationToken = default) =>
+            await _context.Switches.ToListAsync(cancellationToken);
 
-        public async Task<SwitchEntity> GetById(int id) =>
-            await _context.Switches.FindAsync(id);
+        public async Task<SwitchEntity> GetById(int id, CancellationToken cancellationToken = default) =>
+            await _context.Switches.FindAsync([id], cancellationToken);
     }
 }

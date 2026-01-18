@@ -1,10 +1,14 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using SwitchManagment.API.Db;
+using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Models.Dto.Switch;
-using SwitchManagment.API.Repository.Entities;
-using SwitchManagment.API.Repository.Interfaces;
+using SwitchManagment.API.Models.Dto.Switch.Request;
+using SwitchManagment.API.Models.Dto.Switch.Response;
+using System.ComponentModel.DataAnnotations;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace SwitchManagment.API.Controllers
 {
@@ -12,41 +16,118 @@ namespace SwitchManagment.API.Controllers
     [ApiController]
     public class SwitchController : ControllerBase
     {
-        private readonly ILogger<SwitchController> _logger;
+        private readonly ILogger<SwitchTestController> _logger;
         private readonly IMapper _mapper;
-        private readonly ISwitchRepository _switchRepository;
+        private readonly ApplicationContext _context;
 
-        public SwitchController(ILogger<SwitchController> logger, IMapper mapper, ISwitchRepository switchRepository) 
+        public SwitchController(ILogger<SwitchTestController> logger, IMapper mapper, ApplicationContext context)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _switchRepository = switchRepository ?? throw new ArgumentNullException(nameof(switchRepository));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-
-        // GET: api/<SwitchController>
+        // GET: api/Switch
         [HttpGet]
-        public async Task<IEnumerable<SwitchResponse>> Get() =>
-            _mapper.Map<IEnumerable<SwitchResponse>>(await _switchRepository.GetAll());
-
-        // GET api/<SwitchController>/5
-        [HttpGet("{id}")]
-        public async Task<SwitchResponse> Get(int id) =>
-            _mapper.Map<SwitchResponse>(await _switchRepository.GetById(id));
-        
-        [HttpPost]
-        public async Task<int> Post([FromBody] SwitchCreateRequest switchCreate) =>
-            await _switchRepository.Add(_mapper.Map<SwitchEntity>(switchCreate));
+        public async Task<ActionResult<IEnumerable<SwitchAnnotationResponse>>> GetSwitches([FromServices] CancellationToken cancellationToken) =>
+            Ok(_mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await _context.Switches.ToListAsync()));
 
         /*
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpGet("getswitches")]
+        public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery]SwitchGet switchGet, [FromServices] CancellationToken cancellationToken)
         {
+
+        }
+        */
+            
+
+        // GET: api/Switch/5
+        [HttpGet("{id}")]
+        [ProducesResponseType<SwitchAnnotationResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<SwitchAnnotationResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id, [FromServices] CancellationToken cancellationToken) =>
+            await _context.Switches.FindAsync([id], cancellationToken) is SwitchEntity switchEntity ? Ok(_mapper.Map<SwitchAnnotationResponse>(switchEntity)) : 
+            Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+
+
+        // PUT: api/Switch/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /*
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutSwitchEntity(int id, SwitchEntity switchEntity)
+        {
+            if (id != switchEntity.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(switchEntity).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!SwitchEntityExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
         */
 
+        // POST: api/Switch
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPost]
+        [ProducesResponseType<int>(StatusCodes.Status201Created)]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<int>> PostSwitch([FromBody]SwitchCreateRequest switchEntity, [FromServices] CancellationToken cancellationToken)
+        {
+            try
+            {
+                var addResult = (await _context.Switches.AddAsync(_mapper.Map<SwitchEntity>(switchEntity), cancellationToken)).Entity;
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return CreatedAtAction("GetSwitch", new { id = addResult.Id }, addResult.Id);
+            }
+            catch(DbUpdateException e) when(e.InnerException is SqliteException innerException && innerException.Message == "SQLite Error 19: 'UNIQUE constraint failed: Switches.IpOrName'.")
+            {
+                return Problem(detail: "Switch with this 'IpOrName' already exist.", statusCode: StatusCodes.Status409Conflict);
+            }
+        }
+
+        // DELETE: api/Switch/5
         [HttpDelete("{id}")]
-        public async Task Delete(int id) =>
-            await _switchRepository.DeleteById(id);
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteSwitch([Range(1, int.MaxValue)][FromRoute]int id, [FromServices]CancellationToken cancellationToken)
+        {
+            try
+            {
+                _context.Switches.Remove(new SwitchEntity { Id = id });
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return NoContent();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+            }
+        }
+
+        private bool SwitchEntityExists(int id)
+        {
+            return _context.Switches.Any(e => e.Id == id);
+        }
     }
 }

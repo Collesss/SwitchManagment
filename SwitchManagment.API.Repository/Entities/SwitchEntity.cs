@@ -1,7 +1,9 @@
 ﻿namespace SwitchManagment.API.Repository.Entities
 {
-    public class SwitchEntity : BaseEntity
+    public class SwitchEntity
     {
+        public int Id { get; set; }
+
         public string IpOrName { get; set; }
 
         public string Location { get; set; }

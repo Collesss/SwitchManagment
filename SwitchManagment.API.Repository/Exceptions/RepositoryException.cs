@@ -4,6 +4,7 @@
     enum RepositoryCodeException
     {
         Unknown,
+        IndexUsed,
         KeyUsed,
         KeyNotFound,
         FieldEmpty

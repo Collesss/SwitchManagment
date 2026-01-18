@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
-using SwitchManagment.API.Models.Dto.Switch;
-using SwitchManagment.API.Repository.Entities;
+using SwitchManagment.API.Models.Dto.Switch.Request;
+using SwitchManagment.API.Models.Dto.Switch.Response;
+//using SwitchManagment.API.Repository.Entities;
+using SwitchManagment.API.Db.Entities;
 
 namespace SwitchManagment.API.AutoMapper
 {
@@ -8,7 +10,7 @@ namespace SwitchManagment.API.AutoMapper
     {
         public AutoMapperProfile() 
         {
-            CreateMap<SwitchEntity, SwitchResponse>();
+            CreateMap<SwitchEntity, SwitchAnnotationResponse>();
             CreateMap<SwitchCreateRequest, SwitchEntity>();
         }
     }

@@ -8,11 +8,18 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="16.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.12" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SwitchManagment.API.Db\SwitchManagment.API.Db.csproj" />
     <ProjectReference Include="..\SwitchManagment.API.Repository.SqlLite\SwitchManagment.API.Repository.SqlLite.csproj" />
     <ProjectReference Include="..\SwitchManagment.API.Repository\SwitchManagment.API.Repository.csproj" />
   </ItemGroup>

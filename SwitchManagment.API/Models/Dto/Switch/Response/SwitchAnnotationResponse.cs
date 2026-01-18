@@ -1,10 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace SwitchManagment.API.Models.Dto.Switch
+﻿namespace SwitchManagment.API.Models.Dto.Switch.Response
 {
-    public class SwitchCreateRequest
+    public class SwitchAnnotationResponse
     {
-        [Required]
+        public int Id { get; set; }
+        
         public string IpOrName { get; set; }
 
         public string Location { get; set; }
