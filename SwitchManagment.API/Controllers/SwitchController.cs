@@ -36,7 +36,7 @@ namespace SwitchManagment.API.Controllers
         [HttpGet("getswitches")]
         public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery] SwitchGet switchGet)
         {
-            var sort = _context.Switches.OrderBy<SwitchEntity, int>(switchGet.Sort.Field, switchGet.Sort.IsAscending);
+            var sort = _context.Switches.OrderBy(switchGet.Sort.Field, switchGet.Sort.IsAscending);
 
             await Task.CompletedTask;
 
