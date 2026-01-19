@@ -8,7 +8,7 @@ using SwitchManagment.API.Models.Dto.Switch;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Response;
 using System.ComponentModel.DataAnnotations;
-
+using SwitchManagment.API.Extensions;
 
 namespace SwitchManagment.API.Controllers
 {
@@ -29,25 +29,28 @@ namespace SwitchManagment.API.Controllers
 
         // GET: api/Switch
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SwitchAnnotationResponse>>> GetSwitches([FromServices] CancellationToken cancellationToken) =>
+        public async Task<ActionResult<IEnumerable<SwitchAnnotationResponse>>> GetSwitches() =>
             Ok(_mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await _context.Switches.ToListAsync()));
 
-        /*
-        [HttpGet("getswitches")]
-        public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery]SwitchGet switchGet, [FromServices] CancellationToken cancellationToken)
-        {
 
+        [HttpGet("getswitches")]
+        public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery] SwitchGet switchGet)
+        {
+            var sort = _context.Switches.OrderBy<SwitchEntity, int>(switchGet.Sort.Field, switchGet.Sort.IsAscending);
+
+            await Task.CompletedTask;
+
+            return Ok(sort);
         }
-        */
-            
+        
 
         // GET: api/Switch/5
         [HttpGet("{id}")]
         [ProducesResponseType<SwitchAnnotationResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SwitchAnnotationResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id, [FromServices] CancellationToken cancellationToken) =>
-            await _context.Switches.FindAsync([id], cancellationToken) is SwitchEntity switchEntity ? Ok(_mapper.Map<SwitchAnnotationResponse>(switchEntity)) : 
+        public async Task<ActionResult<SwitchAnnotationResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id) =>
+            await _context.Switches.FindAsync(id) is SwitchEntity switchEntity ? Ok(_mapper.Map<SwitchAnnotationResponse>(switchEntity)) : 
             Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
 
 
@@ -90,12 +93,12 @@ namespace SwitchManagment.API.Controllers
         [ProducesResponseType<int>(StatusCodes.Status201Created)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<int>> PostSwitch([FromBody]SwitchCreateRequest switchEntity, [FromServices] CancellationToken cancellationToken)
+        public async Task<ActionResult<int>> PostSwitch([FromBody]SwitchCreateRequest switchEntity)
         {
             try
             {
-                var addResult = (await _context.Switches.AddAsync(_mapper.Map<SwitchEntity>(switchEntity), cancellationToken)).Entity;
-                await _context.SaveChangesAsync(cancellationToken);
+                var addResult = (await _context.Switches.AddAsync(_mapper.Map<SwitchEntity>(switchEntity))).Entity;
+                await _context.SaveChangesAsync();
 
                 return CreatedAtAction("GetSwitch", new { id = addResult.Id }, addResult.Id);
             }
@@ -110,12 +113,12 @@ namespace SwitchManagment.API.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteSwitch([Range(1, int.MaxValue)][FromRoute]int id, [FromServices]CancellationToken cancellationToken)
+        public async Task<IActionResult> DeleteSwitch([Range(1, int.MaxValue)][FromRoute]int id)
         {
             try
             {
                 _context.Switches.Remove(new SwitchEntity { Id = id });
-                await _context.SaveChangesAsync(cancellationToken);
+                await _context.SaveChangesAsync();
 
                 return NoContent();
             }

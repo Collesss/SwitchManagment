@@ -4,9 +4,9 @@ namespace SwitchManagment.API.Models.Dto.Switch
 {
     public class Sort
     {
-        [OnlyValues([null, "", "IpOrName", "Location", "Description"])]
-        public string Field { get; set; }
+        [OnlyValues(["Id", "IpOrName", "Location", "Description"])]
+        public string Field { get; set; } = "Id";
 
-        public bool IsAscending { get; set; }
+        public bool IsAscending { get; set; } = true;
     }
 }
