@@ -2,6 +2,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 
 namespace SwitchManagment.API.Extensions
 {
@@ -77,16 +78,24 @@ namespace SwitchManagment.API.Extensions
 
 
 
-        /*
+        
         public static IQueryable<T> Like<T>(this IQueryable<T> queryable, Dictionary<string, string> propertyAndPatterns)
         {
+            MethodInfo efLike = typeof(DbFunctionsExtensions).GetMethod("Like", [typeof(DbFunctions), typeof(string), typeof(string)]);
 
+            Expression nullArg = Expression.Constant(null, typeof(DbFunctions));
+
+            IEnumerable<MethodCallExpression> callLikeExpressions = propertyAndPatterns
+                .Select(propAndPat => Expression.Call(efLike, nullArg, Expression.Constant(propAndPat.Key), Expression.Constant(propAndPat.Value)));
+
+            Expression andLikeExpression = callLikeExpressions.Aggregate((Expression)Expression.Constant(true), Expression.AndAlso);
             
+            ParameterExpression parameter = Expression.Parameter(typeof(T));
+            
+            Expression<Func<T, bool>> andLikeLambda = Expression.Lambda<Func<T, bool>>(andLikeExpression, parameter);
 
-            EF.Functions.Like()
-
-            return queryable;
+            return queryable.Where(andLikeLambda);
         }
-        */
+        
     }
 }

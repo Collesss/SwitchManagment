@@ -9,6 +9,6 @@ namespace SwitchManagment.API.Models.Dto.Switch
         public Sort Sort { get; set; } = new Sort();
 
         [OnlyDictionaryKeyValues(["Id", "IpOrName", "Location", "Description"])]
-        public IDictionary<string, string> Filters { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Filters { get; set; } = new Dictionary<string, string>();
     }
 }

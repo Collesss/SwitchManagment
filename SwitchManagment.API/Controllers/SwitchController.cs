@@ -37,7 +37,9 @@ namespace SwitchManagment.API.Controllers
         public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery] SwitchGet switchGet)
         {
             //Error, this shit cant be translate suka blat, i dont know, try rewrite like my method OrderBy.
-            var filter = _context.Switches.Where(@switch => switchGet.Filters.All(filter => EF.Functions.Like(filter.Key, filter.Value)));
+            //var filter = _context.Switches.Where(@switch => switchGet.Filters.All(filter => EF.Functions.Like(filter.Key, filter.Value)));
+
+            var filter = _context.Switches.Like(switchGet.Filters);
 
             int count = await filter.CountAsync();
 
