@@ -4,11 +4,11 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.Db;
 using SwitchManagment.API.Db.Entities;
+using SwitchManagment.API.Extensions;
 using SwitchManagment.API.Models.Dto.Switch;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Response;
 using System.ComponentModel.DataAnnotations;
-using SwitchManagment.API.Extensions;
 
 namespace SwitchManagment.API.Controllers
 {
@@ -36,11 +36,20 @@ namespace SwitchManagment.API.Controllers
         [HttpGet("getswitches")]
         public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery] SwitchGet switchGet)
         {
-            var sort = _context.Switches.OrderBy(switchGet.Sort.Field, switchGet.Sort.IsAscending);
+            //Error, this shit cant be translate suka blat, i dont know, try rewrite like my method OrderBy.
+            var filter = _context.Switches.Where(@switch => switchGet.Filters.All(filter => EF.Functions.Like(filter.Key, filter.Value)));
 
-            await Task.CompletedTask;
+            int count = await filter.CountAsync();
 
-            return Ok(sort);
+            switchGet.PageNav.CountElements = count;
+
+            switchGet.PageNav.PageNum = switchGet.PageNav.PageNum > switchGet.PageNav.PageCount ? switchGet.PageNav.PageCount : switchGet.PageNav.PageNum;
+
+            var sort = filter.OrderBy(switchGet.Sort.Field, switchGet.Sort.IsAscending);
+
+            var pagination = sort.Skip((switchGet.PageNav.PageNum == 0 ? 0 : (switchGet.PageNav.PageNum - 1)) * switchGet.PageNav.PageSize).Take(switchGet.PageNav.PageSize);
+
+            return Ok(new SwitchGetAnnotationResponse { SwitchGetInfo = switchGet, Switches = _mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await pagination.ToListAsync())});
         }
         
 
