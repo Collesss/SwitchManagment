@@ -47,17 +47,18 @@ namespace SwitchManagment.API.Controllers
 
             switchGet.PageNav.PageNum = switchGet.PageNav.PageNum > switchGet.PageNav.PageCount ? switchGet.PageNav.PageCount : switchGet.PageNav.PageNum;
 
-            var sort = filter.OrderBy(switchGet.Sort.Field, switchGet.Sort.IsAscending);
+            var result = filter
+                .OrderBy(switchGet.Sort.Field, switchGet.Sort.IsAscending)
+                .Skip((switchGet.PageNav.PageNum - 1) * switchGet.PageNav.PageSize)
+                .Take(switchGet.PageNav.PageSize);
 
-            var pagination = sort.Skip((switchGet.PageNav.PageNum == 0 ? 0 : (switchGet.PageNav.PageNum - 1)) * switchGet.PageNav.PageSize).Take(switchGet.PageNav.PageSize);
-
-            return Ok(new SwitchGetAnnotationResponse { SwitchGetInfo = switchGet, Switches = _mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await pagination.ToListAsync())});
+            return Ok(new SwitchGetAnnotationResponse { SwitchGetInfo = switchGet, Switches = _mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await result.ToListAsync())});
         }
         
 
         // GET: api/Switch/5
         [HttpGet("{id}")]
-        [ProducesResponseType<SwitchAnnotationResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<SwitchAnnotationResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id) =>
@@ -101,7 +102,7 @@ namespace SwitchManagment.API.Controllers
         // POST: api/Switch
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        [ProducesResponseType<int>(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
         public async Task<ActionResult<int>> PostSwitch([FromBody]SwitchCreateRequest switchEntity)

@@ -81,6 +81,8 @@ namespace SwitchManagment.API.Extensions
         
         public static IQueryable<T> Like<T>(this IQueryable<T> queryable, Dictionary<string, string> propertyAndPatterns)
         {
+            ArgumentNullException.ThrowIfNull(propertyAndPatterns, nameof(propertyAndPatterns));
+
             Type type = typeof(T);
 
             MethodInfo efLike = typeof(DbFunctionsExtensions).GetMethod("Like", [typeof(DbFunctions), typeof(string), typeof(string)]);

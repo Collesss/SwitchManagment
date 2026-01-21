@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace SwitchManagment.API.Models.Dto.Switch
 {
@@ -14,6 +18,8 @@ namespace SwitchManagment.API.Models.Dto.Switch
         [BindNever]
         public int CountElements { get; set; }
 
-        public int PageCount => (CountElements / PageSize) + (CountElements % PageSize > 0 ? 1 : 0);
+        [BindNever]
+        [JsonIgnore]
+        public int PageCount => CountElements == 0 ? 1 : (CountElements / PageSize) + (CountElements % PageSize > 0 ? 1 : 0);
     }
 }
