@@ -12,6 +12,8 @@ namespace SwitchManagment.API.AutoMapper
         {
             CreateMap<SwitchEntity, SwitchAnnotationResponse>();
             CreateMap<SwitchCreateRequest, SwitchEntity>();
+            CreateMap<SwitchGetRequest, SwitchGetResponse>();
+            CreateMap<PageNavRequest, PageNavResponse>();
         }
     }
 }

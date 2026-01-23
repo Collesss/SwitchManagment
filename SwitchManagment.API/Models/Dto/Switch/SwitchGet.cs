@@ -1,15 +1,17 @@
-﻿using SwitchManagment.API.ValidationAttributes;
+﻿using SwitchManagment.API.Models.Dto.Switch.Request;
+using SwitchManagment.API.ValidationAttributes;
+using System.ComponentModel;
 
 namespace SwitchManagment.API.Models.Dto.Switch
 {
-    public class SwitchGet
+    public class SwitchGet<T> where T : PageNavRequest, new()
     {
-        public PageNav PageNav {  get; set; } = new PageNav();
+        public T PageNav {  get; set; } = new T();
 
         public Sort Sort { get; set; } = new Sort();
 
         [NotNullDictionaryValues]
         [OnlyDictionaryKeyValues(["Id", "IpOrName", "Location", "Description"])]
-        public Dictionary<string, string> Filters { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Filters { get; set; } = [];
     }
 }

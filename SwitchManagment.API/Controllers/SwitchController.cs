@@ -34,25 +34,27 @@ namespace SwitchManagment.API.Controllers
 
 
         [HttpGet("getswitches")]
-        public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery] SwitchGet switchGet)
+        public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery] SwitchGetRequest switchGet)
         {
             //Error, this shit cant be translate suka blat, i dont know, try rewrite like my method OrderBy.
             //var filter = _context.Switches.Where(@switch => switchGet.Filters.All(filter => EF.Functions.Like(filter.Key, filter.Value)));
+
+            SwitchGetResponse getResponse = _mapper.Map<SwitchGetResponse>(switchGet);
 
             var filter = _context.Switches.Like(switchGet.Filters);
 
             int count = await filter.CountAsync();
 
-            switchGet.PageNav.CountElements = count;
+            getResponse.PageNav.CountElements = count;
 
-            switchGet.PageNav.PageNum = switchGet.PageNav.PageNum > switchGet.PageNav.PageCount ? switchGet.PageNav.PageCount : switchGet.PageNav.PageNum;
+            getResponse.PageNav.PageNum = getResponse.PageNav.PageNum > getResponse.PageNav.PageCount ? getResponse.PageNav.PageCount : getResponse.PageNav.PageNum;
 
             var result = filter
-                .OrderBy(switchGet.Sort.Field, switchGet.Sort.IsAscending)
-                .Skip((switchGet.PageNav.PageNum - 1) * switchGet.PageNav.PageSize)
-                .Take(switchGet.PageNav.PageSize);
+                .OrderBy(getResponse.Sort.Field, getResponse.Sort.IsAscending)
+                .Skip((getResponse.PageNav.PageNum - 1) * getResponse.PageNav.PageSize)
+                .Take(getResponse.PageNav.PageSize);
 
-            return Ok(new SwitchGetAnnotationResponse { SwitchGetInfo = switchGet, Switches = _mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await result.ToListAsync())});
+            return Ok(new SwitchGetAnnotationResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await result.ToListAsync())});
         }
         
 
