@@ -6,6 +6,17 @@ namespace SwitchManagment.API.Models.Dto.Switch.Response
     public class PageNavResponse : PageNavRequest
     {
         public int CountElements { get; set; }
+        /*
+        public int CountElements 
+        {
+            get; 
+            set
+            {
+                field = value;
+                PageNum = PageNum > PageCount ? PageCount : PageNum;
+            }
+        }
+        */
 
         [JsonIgnore]
         public int PageCount => CountElements == 0 ? 1 : ((CountElements / PageSize) + (CountElements % PageSize > 0 ? 1 : 0));

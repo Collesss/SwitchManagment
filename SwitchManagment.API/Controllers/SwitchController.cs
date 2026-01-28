@@ -43,6 +43,8 @@ namespace SwitchManagment.API.Controllers
 
             var filter = _context.Switches.Like(switchGet.Filters);
 
+            //using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
+
             int count = await filter.CountAsync();
 
             getResponse.PageNav.CountElements = count;
