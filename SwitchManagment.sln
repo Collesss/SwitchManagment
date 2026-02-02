@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchManagment.API.Db", "S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchManagment.API.SwitchService", "SwitchManagment.API.SwitchService\SwitchManagment.API.SwitchService.csproj", "{9E901495-A0FE-4A12-805C-B47762640FC4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleAppTestingSwitchService", "ConsoleAppTestingSwitchService\ConsoleAppTestingSwitchService.csproj", "{63B980D8-6832-49DB-AFEB-4855795B185D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{9E901495-A0FE-4A12-805C-B47762640FC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E901495-A0FE-4A12-805C-B47762640FC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E901495-A0FE-4A12-805C-B47762640FC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63B980D8-6832-49DB-AFEB-4855795B185D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63B980D8-6832-49DB-AFEB-4855795B185D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63B980D8-6832-49DB-AFEB-4855795B185D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63B980D8-6832-49DB-AFEB-4855795B185D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

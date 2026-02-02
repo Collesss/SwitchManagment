@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.AutoMapper;
 using SwitchManagment.API.Db;
+using SwitchManagment.API.SwitchService.Implementations;
+using SwitchManagment.API.SwitchService.Interfaces;
 /*
 using SwitchManagment.API.Repository.Interfaces;
 using SwitchManagment.API.Repository.SqlLite;
@@ -27,6 +29,7 @@ namespace SwitchManagment.API
                 opts.UseSqlite(builder.Configuration.GetConnectionString("Default")));
 
             builder.Services.AddAutoMapper(ca => ca.AddProfile<AutoMapperProfile>());
+            builder.Services.AddTransient<ISwitchService, SwitchServiceHPComware5>();
 
             #endregion
 

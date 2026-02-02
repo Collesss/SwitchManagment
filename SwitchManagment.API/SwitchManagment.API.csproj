@@ -22,6 +22,7 @@
     <ProjectReference Include="..\SwitchManagment.API.Db\SwitchManagment.API.Db.csproj" />
     <ProjectReference Include="..\SwitchManagment.API.Repository.SqlLite\SwitchManagment.API.Repository.SqlLite.csproj" />
     <ProjectReference Include="..\SwitchManagment.API.Repository\SwitchManagment.API.Repository.csproj" />
+    <ProjectReference Include="..\SwitchManagment.API.SwitchService\SwitchManagment.API.SwitchService.csproj" />
   </ItemGroup>
 
 </Project>

@@ -8,6 +8,7 @@ using SwitchManagment.API.Extensions;
 using SwitchManagment.API.Models.Dto.Switch;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Response;
+using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace SwitchManagment.API.Controllers
@@ -19,12 +20,14 @@ namespace SwitchManagment.API.Controllers
         private readonly ILogger<SwitchTestController> _logger;
         private readonly IMapper _mapper;
         private readonly ApplicationContext _context;
+        //private readonly ISwitchService _switchService;
 
-        public SwitchController(ILogger<SwitchTestController> logger, IMapper mapper, ApplicationContext context)
+        public SwitchController(ILogger<SwitchTestController> logger, IMapper mapper, ApplicationContext context, ISwitchService switchService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            //_switchService = switchService ?? throw new ArgumentNullException(nameof(switchService));
         }
 
         // GET: api/Switch

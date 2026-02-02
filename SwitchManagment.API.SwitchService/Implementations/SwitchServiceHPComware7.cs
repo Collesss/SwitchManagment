@@ -29,6 +29,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
                 throw new ArgumentException("vlan cant be less 1.", nameof(vlans));
 
 
+
             using var sshClient = new SshClient(ipOrName, 22, login, password);
             sshClient.Connect();
 
@@ -37,20 +38,17 @@ namespace SwitchManagment.API.SwitchService.Implementations
             await Task.Delay(1_000);
             Console.WriteLine(command1.Result);
 
-            var command2 = sshClient.RunCommand("interface GigabitEthernet1/0/20");
+            var command2 = sshClient.RunCommand("interface GigabitEthernet1/0/3");
             await Task.Delay(1_000);
             Console.WriteLine(command2.Result);
-
 
             var command3 = sshClient.RunCommand("port link-type trunk");
             await Task.Delay(1_000);
             Console.WriteLine(command3.Result);
 
-
             var command4 = sshClient.RunCommand("port link-type trunk");
             await Task.Delay(1_000);
             Console.WriteLine(command4.Result);
-
 
             var command5 = sshClient.RunCommand("port trunk permit 10 20");
             await Task.Delay(1_000);
