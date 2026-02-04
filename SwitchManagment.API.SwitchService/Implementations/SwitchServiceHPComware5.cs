@@ -6,13 +6,13 @@ namespace SwitchManagment.API.SwitchService.Implementations
 {
     public class SwitchServiceHPComware5 : ISwitchService
     {
-        public SwitchSummary GetSwitchSummary(string ipOrName, string login, string password)
+        public Task<SwitchSummary> GetSwitchSummary(string ipOrName, string login, string password, string superPassword, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
         //test login: admin3 ; pass: 1234
-        public async Task SettingPort(string ipOrName, string login, string password, string interfaceName, bool isTrunk, params int[] vlans)
+        public async Task SettingPort(string ipOrName, string login, string password, string superPassword, string interfaceName, bool isTrunk, CancellationToken cancellationToken = default, params int[] vlans)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(ipOrName);
             ArgumentException.ThrowIfNullOrWhiteSpace(login);

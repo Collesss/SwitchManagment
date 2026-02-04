@@ -4,8 +4,8 @@ namespace SwitchManagment.API.SwitchService.Interfaces
 {
     public interface ISwitchService
     {
-        public SwitchSummary GetSwitchSummary(string ipOrName, string login, string password);
+        public Task<SwitchSummary> GetSwitchSummary(string ipOrName, string login, string password, string superPassword, CancellationToken cancellationToken = default);
 
-        public Task SettingPort(string ipOrName, string login, string password, string interfaceName, bool isTrunk, params int[] vlans);
+        public Task SettingPort(string ipOrName, string login, string password, string superPassword, string interfaceName, bool isTrunk, CancellationToken cancellationToken = default, params int[] vlans);
     }
 }
