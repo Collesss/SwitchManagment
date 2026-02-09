@@ -2,6 +2,7 @@
 using SwitchManagment.API.SwitchService.Data;
 using SwitchManagment.API.SwitchService.Exceptions;
 using SwitchManagment.API.SwitchService.Interfaces;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SwitchManagment.API.SwitchService.Implementations
@@ -18,11 +19,11 @@ namespace SwitchManagment.API.SwitchService.Implementations
             using var sshClient = new SshClient(ipOrName, 22, login, password);
 
             await sshClient.ConnectAsync(cancellationToken);
-
+            //sshClient.CreateShellStream()
             using ShellStream shellStream = sshClient.CreateShellStreamNoTerminal();
             #endregion
 
-            #region enter_cmdline-mode_and_system_view
+            #region enter_cmdline-mode_and_system_view_and_disable_screen_lenght
             shellStream.WriteLine("_cmdline-mode on");
             shellStream.WriteLine("Y");
             shellStream.WriteLine(superPassword);
@@ -30,20 +31,56 @@ namespace SwitchManagment.API.SwitchService.Implementations
             shellStream.Expect(new ExpectAction("Error: Invalid password.", _ => throw new SwitchServiceException("Invalid super password.")),
                 new ExpectAction("Warning: Now you enter an all-command mode for developer's testing, some commands may affect operation by wrong use, please carefully use it with our engineer's direction.", _ => { }));
 
+            shellStream.WriteLine("screen-length disable");
+            //Console.WriteLine(shellStream.Expect("screen-length disable"));
+            
             shellStream.WriteLine("system-view");
             #endregion
 
             #region get_vlan_list
             shellStream.WriteLine("display vlan all");
-            shellStream.Expect("display vlan all");
 
-            string rawOutputVlanInfo = shellStream.Expect(new Regex(@"^\[[^\[\]]+\]"));
+            shellStream.Expect("display vlan all");
+            /*
+            StringBuilder stringBuilder = new StringBuilder();
+
+            bool @continue = true;
+
+            do
+            {
+                await Task.Delay(100);
+
+                shellStream.Expect(new ExpectAction("---- More ----", str =>
+                {
+                    Console.WriteLine(str);
+                    stringBuilder.Append(str);
+                    shellStream.WriteLine(string.Empty);
+                }), new ExpectAction(new Regex(@"^\[[^\[\]]+\]", RegexOptions.Multiline), str =>
+                {
+                    Console.WriteLine(str);
+                    stringBuilder.Append(str);
+                    @continue = false;
+                }));
+
+            } while (@continue);
+            */
+
+
+            string rawOutputVlanInfo = shellStream.Expect(new Regex(@"^\[[^\[\]]+\]", RegexOptions.Multiline));
 
             IEnumerable<SwitchVlan> switchVlans = vlanRegex.Matches(rawOutputVlanInfo).Select(match => new SwitchVlan { 
                 Vlan = int.Parse(match.Groups["vlan_id"].Value),
                 Name = match.Groups["name"].Value,
                 Description = match.Groups["description"].Value })
                 .ToArray();
+
+            #endregion
+
+
+            #region get_interface_list
+
+
+
 
             #endregion
 
