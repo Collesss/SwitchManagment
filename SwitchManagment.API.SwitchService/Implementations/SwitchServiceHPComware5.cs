@@ -14,6 +14,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
 
             Regex vlanRegex = new Regex(@"VLAN ID: (?<vlan_id>\d+)[?<=\d\D]+?Description: (?<description>.+)[?<=\d\D]+?Name: (?<name>.+)");
 
+            Regex interfaceRegex = new Regex(@"(?<interface>[^ ]+) current state: (?<state>[^\r\n]+)[\d\D]+?Description: (?<description>.+)[\d\D]+?Port link-type: (?:(?<link_type>access)[\d\D]+?Untagged VLAN ID : (?<vlan>\d+)|(?<link_type>trunk)[\d\D]+?VLAN permitted:(?: (?:(?<vlan_range>(?<from>\d+)-(?<to>\d+))|(?<vlan>\d+))[^,\n]*[,\n]?)+|(?<link_type>.+))");
 
             #region open_connect_and_shell
             using var sshClient = new SshClient(ipOrName, 22, login, password);
@@ -68,25 +69,51 @@ namespace SwitchManagment.API.SwitchService.Implementations
 
             string rawOutputVlanInfo = shellStream.Expect(new Regex(@"^\[[^\[\]]+\]", RegexOptions.Multiline));
 
-            IEnumerable<SwitchVlan> switchVlans = vlanRegex.Matches(rawOutputVlanInfo).Select(match => new SwitchVlan { 
+            IEnumerable<SwitchVlan> switchVlans = vlanRegex.Matches(rawOutputVlanInfo).Select(match => new SwitchVlan 
+            { 
                 Vlan = int.Parse(match.Groups["vlan_id"].Value),
                 Name = match.Groups["name"].Value,
-                Description = match.Groups["description"].Value })
-                .ToArray();
+                Description = match.Groups["description"].Value 
+            }).ToArray();
 
             #endregion
-
 
             #region get_interface_list
 
+            shellStream.WriteLine("display interface");
+            shellStream.Expect("display interface");
 
+            string rawOutputInterfaceInfo = shellStream.Expect(new Regex(@"^\[[^\[\]]+\]", RegexOptions.Multiline));
+
+            IEnumerable<SwitchPort> switchPorts = interfaceRegex.Matches(rawOutputInterfaceInfo)
+                .Select(match => new SwitchPort 
+                {
+                    Interface = match.Groups["interface"].Value,
+                    Description = match.Groups["description"].Value,
+                    Status = match.Groups["state"].Value switch 
+                    {
+                        "DOWN" => SwitchPortStatus.Down,
+                        "UP" => SwitchPortStatus.Up,
+                        _ => SwitchPortStatus.Disable
+                    },
+                    Type = match.Groups["link_type"].Value switch 
+                    {
+                        "access" => SwitchPortType.Access,
+                        "trunk" => SwitchPortType.Trunk,
+                        _ => SwitchPortType.Unknown
+                    },
+                    Vlans = match.Groups["vlan"].Captures.Select(matchVlan => int.Parse(matchVlan.Value)).ToArray()
+                }).ToArray();
 
 
             #endregion
 
-
-
-            throw new NotImplementedException();
+            return new SwitchInfo 
+            { 
+                IpOrName = ipOrName,
+                Vlans = switchVlans,
+                Ports = switchPorts
+            };
         }
 
         public Task<SwitchSummary> GetSwitchSummary(string ipOrName, string login, string password, string superPassword, CancellationToken cancellationToken = default)
