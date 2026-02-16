@@ -67,11 +67,6 @@ namespace SwitchManagment.API.SwitchService.Implementations
             throw new NotImplementedException();
         }
 
-        public Task<SwitchSummary> GetSwitchSummary(string ipOrName, string login, string password, string superPassword, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
 
         public async Task SettingPort(string ipOrName, string login, string password, string superPassword, string interfaceName, bool isTrunk, CancellationToken cancellationToken = default, params int[] vlans)
         {
