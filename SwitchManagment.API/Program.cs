@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.AutoMapper;
 using SwitchManagment.API.Db;
@@ -30,7 +31,7 @@ namespace SwitchManagment.API
 
             builder.Services.AddAutoMapper(ca => ca.AddProfile<AutoMapperProfile>());
             builder.Services.AddTransient<ISwitchService, SwitchServiceHPComware5>();
-
+            builder.Services.AddDataProtection();
             #endregion
 
             #region UseMiddleware
