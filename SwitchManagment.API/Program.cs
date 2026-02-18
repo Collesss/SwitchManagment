@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.AutoMapper;
 using SwitchManagment.API.Db;

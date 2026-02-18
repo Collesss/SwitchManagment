@@ -8,6 +8,8 @@ namespace SwitchManagment.API.Db
     {
         public DbSet<SwitchEntity> Switches { get; set; }
 
+        public DbSet<CredentialEntity> Credentials { get; set; }
+
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
         {
             Database.EnsureCreated();
@@ -26,6 +28,7 @@ namespace SwitchManagment.API.Db
                 .Select(i => new SwitchEntity() { Id = i, IpOrName = $"192.168.0.{i}", Location = $"Loc{i}", Description = $"Desc{i}" });
 
             modelBuilder.ApplyConfiguration(new SwitchEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new CredentialEntityConfiguration());
 
             modelBuilder.Entity<SwitchEntity>().HasData(initSwitches);
 

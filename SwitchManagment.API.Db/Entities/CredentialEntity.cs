@@ -8,8 +8,8 @@
 
         public string Login { get; set; }
 
-        public string EncryptedPassword { get; set; }
+        public string Password { get; set; }
 
-        public string EncryptedSuperPassword { get; set; }
+        public string SuperPassword { get; set; }
     }
 }
