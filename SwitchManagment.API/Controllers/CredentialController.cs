@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using SwitchManagment.API.Db;
+using SwitchManagment.API.Models.Dto.Credential;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 namespace SwitchManagment.API.Controllers
@@ -10,11 +13,14 @@ namespace SwitchManagment.API.Controllers
     {
         private readonly ILogger<CredentialController> _logger;
         private readonly IDataProtector _dataProtector;
+        private readonly ApplicationContext _applicationContext;
+        private readonly IMapper _mapper;
 
-        public CredentialController(ILogger<CredentialController> logger, IDataProtector dataProtector)
+        public CredentialController(ILogger<CredentialController> logger, IDataProtector dataProtector, ApplicationContext applicationContext, IMapper mapper)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _dataProtector = dataProtector ?? throw new ArgumentNullException(nameof(dataProtector));
+            _applicationContext = applicationContext ?? throw new ArgumentNullException(nameof(applicationContext));
         }
 
         // GET: api/<CredentialController>
@@ -33,8 +39,10 @@ namespace SwitchManagment.API.Controllers
 
         // POST api/<CredentialController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<ActionResult<int>> Post([FromBody] CredentialCreateRequest credential)
         {
+
+
         }
 
         // PUT api/<CredentialController>/5
