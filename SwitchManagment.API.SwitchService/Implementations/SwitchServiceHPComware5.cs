@@ -1,47 +1,62 @@
 ﻿using Renci.SshNet;
+using Renci.SshNet.Common;
 using SwitchManagment.API.SwitchService.Data;
 using SwitchManagment.API.SwitchService.Exceptions;
 using SwitchManagment.API.SwitchService.Interfaces;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace SwitchManagment.API.SwitchService.Implementations
 {
     public class SwitchServiceHPComware5 : ISwitchService
     {
-        public async Task<SwitchInfo> GetSwitchInfo(string ipOrName, string login, string password, string superPassword, CancellationToken cancellationToken = default)
+        private static readonly Regex SystemViewPromtShellRegex = new Regex(@"^\[[^\[\]]+\]", RegexOptions.Multiline);
+
+        private async Task<SshClient> OpenConnect(string ipOrName, string login, string password, CancellationToken cancellationToken = default)
         {
+            SshClient sshClient = new SshClient(ipOrName, 22, login, password);
 
-            Regex vlanRegex = new Regex(@"VLAN ID: (?<vlan_id>\d+)[?<=\d\D]+?Description: (?<description>.+)[?<=\d\D]+?Name: (?<name>.+)");
+            try
+            {
+                await sshClient.ConnectAsync(cancellationToken);
+            }
+            catch (SshAuthenticationException e) when (e.Message == "Permission denied (password).")
+            {
+                throw new SwitchServiceException(SwitchServiceErrorType.WrongLoginOrPass, e);
+            }
+            catch (SocketException e)
+            {
+                throw new SwitchServiceException(SwitchServiceErrorType.HostNotExistOrUnreac, e);
+            }
 
-            Regex interfaceRegex = new Regex(@"(?<interface>[^ ]+) current state: (?<state>[^\r\n]+)[\d\D]+?Description: (?<description>.+)[\d\D]+?Port link-type: (?:(?<link_type>access)[\d\D]+?Untagged VLAN ID : (?<vlan>\d+)|(?<link_type>trunk)[\d\D]+?VLAN permitted:(?: (?:(?<vlan_range>(?<from>\d+)-(?<to>\d+))|(?<vlan>\d+))[^,\n]*[,\n]?)+|(?<link_type>.+))");
-
-            #region open_connect_and_shell
-            using var sshClient = new SshClient(ipOrName, 22, login, password);
-
-            await sshClient.ConnectAsync(cancellationToken);
-            //sshClient.CreateShellStream()
-            using ShellStream shellStream = sshClient.CreateShellStreamNoTerminal();
-            #endregion
-
-            #region enter_cmdline-mode_and_system_view_and_disable_screen_lenght
+            return sshClient;
+        }
+        
+        private void EnterSuperPassSystemViewAndDisScreenLen(ShellStream shellStream, string superPassword)
+        {
             shellStream.WriteLine("_cmdline-mode on");
             shellStream.WriteLine("Y");
             shellStream.WriteLine(superPassword);
 
-            shellStream.Expect(new ExpectAction("Error: Invalid password.", _ => throw new SwitchServiceException("Invalid super password.")),
+            shellStream.Expect(new ExpectAction("Error: Invalid password.", _ => throw new SwitchServiceException(SwitchServiceErrorType.WrongSuperPass)),
                 new ExpectAction("Warning: Now you enter an all-command mode for developer's testing, some commands may affect operation by wrong use, please carefully use it with our engineer's direction.", _ => { }));
 
             shellStream.WriteLine("screen-length disable");
-            //Console.WriteLine(shellStream.Expect("screen-length disable"));
 
             shellStream.WriteLine("system-view");
-            #endregion
+            shellStream.Expect("system-view");
+            shellStream.Expect(SystemViewPromtShellRegex);
+        }
 
-            #region get_vlan_list
+        private IEnumerable<SwitchVlan> GetVlans(ShellStream shellStream)
+        {
+            Regex vlanRegex = new Regex(@"VLAN ID: (?<vlan_id>\d+)[?<=\d\D]+?Description: (?<description>[^\r\n]+)[?<=\d\D]+?Name: (?<name>[^\r\n]+)");
+
             shellStream.WriteLine("display vlan all");
-
             shellStream.Expect("display vlan all");
+
             /*
             StringBuilder stringBuilder = new StringBuilder();
 
@@ -66,26 +81,26 @@ namespace SwitchManagment.API.SwitchService.Implementations
             } while (@continue);
             */
 
+            string rawOutputVlanInfo = shellStream.Expect(SystemViewPromtShellRegex);
 
-            string rawOutputVlanInfo = shellStream.Expect(new Regex(@"^\[[^\[\]]+\]", RegexOptions.Multiline));
-
-            IEnumerable<SwitchVlan> switchVlans = vlanRegex.Matches(rawOutputVlanInfo).Select(match => new SwitchVlan
+            return vlanRegex.Matches(rawOutputVlanInfo).Select(match => new SwitchVlan
             {
                 Vlan = int.Parse(match.Groups["vlan_id"].Value),
                 Name = match.Groups["name"].Value,
                 Description = match.Groups["description"].Value
             }).ToArray();
+        }
 
-            #endregion
-
-            #region get_interface_list
+        private IEnumerable<SwitchPort> GetPorts(ShellStream shellStream)
+        {
+            Regex interfaceRegex = new Regex(@"(?<interface>[^ ]+) current state: (?<state>[^\r\n]+)[\d\D]+?Description: (?<description>[^\r\n]+)[\d\D]+?Port link-type: (?:(?<link_type>access)[\d\D]+?Untagged VLAN ID : (?<vlan>\d+)|(?<link_type>trunk)[\d\D]+?VLAN permitted:(?: (?:(?<vlan_range>(?<from>\d+)-(?<to>\d+))|(?<vlan>\d+))[^,\n]*[,\n]?)+|(?<link_type>.+))");
 
             shellStream.WriteLine("display interface");
             shellStream.Expect("display interface");
 
-            string rawOutputInterfaceInfo = shellStream.Expect(new Regex(@"^\[[^\[\]]+\]", RegexOptions.Multiline));
+            string rawOutputInterfaceInfo = shellStream.Expect(SystemViewPromtShellRegex);
 
-            IEnumerable<SwitchPort> switchPorts = interfaceRegex.Matches(rawOutputInterfaceInfo)
+            return interfaceRegex.Matches(rawOutputInterfaceInfo)
                 .Select(match => new SwitchPort
                 {
                     Interface = match.Groups["interface"].Value,
@@ -104,21 +119,50 @@ namespace SwitchManagment.API.SwitchService.Implementations
                     },
                     Vlans = match.Groups["vlan"].Captures.Select(matchVlan => int.Parse(matchVlan.Value)).ToArray()
                 }).ToArray();
+        }
+
+        private async Task<(SshClient sshClient, ShellStream shellStream)> GetConnectionAndShell(string ipOrName, string login, string password, string superPassword, CancellationToken cancellationToken = default)
+        {
+            SshClient sshClient = await OpenConnect(ipOrName, login, password, cancellationToken);
+
+            ShellStream shellStream = sshClient.CreateShellStreamNoTerminal();
+
+            EnterSuperPassSystemViewAndDisScreenLen(shellStream, superPassword);
+
+            return (sshClient, shellStream);
+        }
 
 
-            #endregion
+        public async Task<SwitchInfo> GetSwitchInfo(string ipOrName, string login, string password, string superPassword, CancellationToken cancellationToken = default)
+        {
+            (SshClient sshClient, ShellStream shellStream) = await GetConnectionAndShell(ipOrName, login, password, superPassword, cancellationToken);
 
-            return new SwitchInfo
+            try
             {
-                IpOrName = ipOrName,
-                Vlans = switchVlans,
-                Ports = switchPorts
-            };
+                return new SwitchInfo
+                {
+                    IpOrName = ipOrName,
+                    Vlans = GetVlans(shellStream),
+                    Ports = GetPorts(shellStream)
+                };
+            }
+            finally
+            {
+                shellStream?.Dispose();
+                sshClient?.Dispose();
+            }
+            /*
+            using var sshClient = await OpenConnect(ipOrName, login, password, cancellationToken);
+
+            using ShellStream shellStream = sshClient.CreateShellStreamNoTerminal();
+            
+            EnterSuperPassSystemViewAndDisScreenLen(shellStream, superPassword);
+            */
         }
 
 
 
-        public async Task SettingPort(string ipOrName, string login, string password, string superPassword, string interfaceName, bool isTrunk, CancellationToken cancellationToken = default, params int[] vlans)
+        public async Task ConfigurePort(string ipOrName, string login, string password, string superPassword, string interfaceName, bool isTrunk, CancellationToken cancellationToken = default, params int[] vlans)
         {
             #region validation
             ArgumentException.ThrowIfNullOrWhiteSpace(ipOrName);
@@ -140,7 +184,6 @@ namespace SwitchManagment.API.SwitchService.Implementations
                 throw new ArgumentException("VLAN list can be unique.", nameof(vlans));
             #endregion
 
-            Regex regexPrompt = new Regex(@"^\[[^\[\]]+\]", RegexOptions.Multiline);
 
             #region open_connect_and_shell
             using var sshClient = new SshClient(ipOrName, 22, login, password);
@@ -166,7 +209,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
 
             shellStream.Expect($"interface {interfaceName}");
             shellStream.Expect(new ExpectAction("% Wrong parameter found at '^' position.", _ => throw new SwitchServiceException("Invalid interface name.")),
-                new ExpectAction(regexPrompt, _ => { }));
+                new ExpectAction(SystemViewPromtShellRegex, _ => { }));
             #endregion
 
             #region check_vlan_exist
@@ -181,7 +224,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
                 throw new SwitchServiceException("VLAN does not exist.");
             #endregion
 
-            shellStream.Expect(regexPrompt);
+            shellStream.Expect(SystemViewPromtShellRegex);
 
             if (isTrunk)
             {
@@ -189,7 +232,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
                 shellStream.WriteLine("port link-type trunk");
 
                 shellStream.Expect(new ExpectAction("% Unrecognized command found at '^' position.", _ => throw new SwitchServiceException("Invalid interface name.")),
-                    new ExpectAction(regexPrompt, _ => { }));
+                    new ExpectAction(SystemViewPromtShellRegex, _ => { }));
 
                 shellStream.WriteLine("undo port trunk permit vlan all");
                 shellStream.WriteLine($"port trunk permit vlan {string.Join(' ', vlans)}");
@@ -202,7 +245,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
                 shellStream.WriteLine("port link-type access");
 
                 shellStream.Expect(new ExpectAction("% Unrecognized command found at '^' position.", _ => throw new SwitchServiceException("Invalid interface name.")),
-                    new ExpectAction(regexPrompt, _ => { }));
+                    new ExpectAction(SystemViewPromtShellRegex, _ => { }));
 
                 shellStream.WriteLine($"port access vlan {vlans.Single()}");
                 shellStream.Expect($"port access vlan {vlans.Single()}");
@@ -210,7 +253,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
             }
 
             //wait execute last command
-            shellStream.Expect(regexPrompt);
+            shellStream.Expect(SystemViewPromtShellRegex);
 
             shellStream.Close();
             sshClient.Disconnect();

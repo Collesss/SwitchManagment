@@ -68,7 +68,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
         }
 
 
-        public async Task SettingPort(string ipOrName, string login, string password, string superPassword, string interfaceName, bool isTrunk, CancellationToken cancellationToken = default, params int[] vlans)
+        public async Task ConfigurePort(string ipOrName, string login, string password, string superPassword, string interfaceName, bool isTrunk, CancellationToken cancellationToken = default, params int[] vlans)
         {
             #region validation
             ArgumentException.ThrowIfNullOrWhiteSpace(ipOrName);

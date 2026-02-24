@@ -41,8 +41,8 @@ namespace SwitchManagment.API.Controllers
         [HttpPost]
         public async Task<ActionResult<int>> Post([FromBody] CredentialCreateRequest credential)
         {
-
-
+            await Task.CompletedTask;
+            throw new NotImplementedException();
         }
 
         // PUT api/<CredentialController>/5
