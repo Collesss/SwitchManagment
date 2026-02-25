@@ -8,7 +8,8 @@
             [SwitchServiceErrorType.HostNotExistOrUnreac] = "HostNotExistOrUnreac",
             [SwitchServiceErrorType.WrongLoginOrPass] = "WrongLoginOrPass",
             [SwitchServiceErrorType.WrongSuperPass] = "WrongSuperPass",
-            [SwitchServiceErrorType.WrongInterface] = "WrongInterface"
+            [SwitchServiceErrorType.WrongInterface] = "WrongInterface",
+            [SwitchServiceErrorType.VLANNotExist] = "VLANNotExist"
         };
 
         public SwitchServiceErrorType ErrorType { get; private set; }

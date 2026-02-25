@@ -12,6 +12,7 @@ namespace SwitchManagment.API.SwitchService.Exceptions
         HostNotExistOrUnreac,
         WrongLoginOrPass,
         WrongSuperPass,
-        WrongInterface
+        WrongInterface,
+        VLANNotExist
     }
 }

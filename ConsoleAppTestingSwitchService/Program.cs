@@ -1,4 +1,5 @@
-﻿using SwitchManagment.API.SwitchService.Implementations;
+﻿using SwitchManagment.API.SwitchService.Data;
+using SwitchManagment.API.SwitchService.Implementations;
 using SwitchManagment.API.SwitchService.Interfaces;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace ConsoleAppTestingSwitchService
 
             //await switchService5.SettingPort("10.23.34.23", "admin2", "1928", "512900", "GigabitEthernet1/0/3", true, CancellationToken.None, 264);
 
-            var res = await switchService5.GetSwitchInfo("10.23.34.23", "admin2", "1928", "5129001", CancellationToken.None);
+            var res = await switchService5.GetSwitchInfo(new ConnectConfig { IpOrName = "10.23.34.23", Login = "admin2", Password = "1928", SuperPassword = "5129001" }, CancellationToken.None);
 
             Console.WriteLine(res.IpOrName);
             Console.WriteLine();
