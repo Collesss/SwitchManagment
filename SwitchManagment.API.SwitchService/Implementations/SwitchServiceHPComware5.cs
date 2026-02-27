@@ -151,7 +151,14 @@ namespace SwitchManagment.API.SwitchService.Implementations
             }
         }
 
+        private void EnterInterface(ShellStream shellStream, string interfaceName)
+        {
+            shellStream.WriteLineAndExpect($"interface {interfaceName}");
 
+            shellStream.Expect(new ExpectAction("% Wrong parameter found at '^' position.", _ =>
+                throw new SwitchServiceException(SwitchServiceErrorType.WrongInterface)),
+                        new ExpectAction(SystemViewPromtShellRegex, _ => { }));
+        }
 
         public async Task ConfigurePort(PortConfig portConfig, CancellationToken cancellationToken = default)
         {
@@ -191,11 +198,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
             {
                 (sshClient, shellStream) = await GetConnectionAndShell(portConfig.IpOrName, portConfig.Login, portConfig.Password, portConfig.SuperPassword, cancellationToken);
 
-                #region enter_interface
-                shellStream.WriteLineAndExpect($"interface {portConfig.InterfaceName}");
-
-                CheckInterfaceOrSupportLinkType();
-                #endregion
+                EnterInterface(shellStream, portConfig.InterfaceName);
 
                 #region check_vlan_exist
                 IEnumerable<int> vlansOnSwitch = GetOnlyVlanNums(shellStream);
@@ -214,7 +217,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
                     CheckInterfaceOrSupportLinkType();
 
                     shellStream.WriteLine("undo port trunk permit vlan all");
-                    shellStream.WriteLineAndExpect($"port trunk permit vlan {string.Join(' ', vlans)}");
+                    shellStream.WriteLineAndExpect($"port trunk permit vlan {string.Join(' ', portConfig.Vlans)}");
                     #endregion
                 }
                 else
@@ -224,7 +227,7 @@ namespace SwitchManagment.API.SwitchService.Implementations
 
                     CheckInterfaceOrSupportLinkType();
 
-                    shellStream.WriteLineAndExpect($"port access vlan {vlans.Single()}");
+                    shellStream.WriteLineAndExpect($"port access vlan {portConfig.Vlans.Single()}");
                     #endregion
                 }
 
@@ -241,6 +244,145 @@ namespace SwitchManagment.API.SwitchService.Implementations
                 throw new SwitchServiceException(SwitchServiceErrorType.Unknown, ex);
             }
             finally 
+            {
+                shellStream?.Dispose();
+                sshClient?.Dispose();
+            }
+        }
+
+        public async Task ConfigurePort(PortConfigTrunk portConfig, CancellationToken cancellationToken = default)
+        {
+
+            #region validation
+            ArgumentNullException.ThrowIfNull(portConfig);
+            ArgumentException.ThrowIfNullOrWhiteSpace(portConfig.IpOrName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(portConfig.Login);
+            ArgumentNullException.ThrowIfNull(portConfig.Password);
+            ArgumentNullException.ThrowIfNull(portConfig.SuperPassword);
+            ArgumentException.ThrowIfNullOrWhiteSpace(portConfig.InterfaceName);
+            ArgumentNullException.ThrowIfNull(portConfig.TrunkVlans);
+
+            if (!portConfig.TrunkVlans.All(vlan => vlan > 0))
+                throw new ArgumentException("VLAN cant be less 1.");
+
+            if (portConfig.TrunkVlans.Any(vlan => portConfig.Vlans.Count(vl => vlan == vl) > 1))
+                throw new ArgumentException("VLAN list can be unique.");
+            #endregion
+
+
+            SshClient sshClient = null;
+            ShellStream shellStream = null;
+
+            void CheckInterfaceOrSupportLinkType()
+            {
+                shellStream.Expect(new ExpectAction(new Regex("% Unrecognized command found at '\\^' position\\.|% Wrong parameter found at '\\^' position\\."), _ =>
+                throw new SwitchServiceException(SwitchServiceErrorType.WrongInterface)),
+                        new ExpectAction(SystemViewPromtShellRegex, _ => { }));
+            }
+
+            try
+            {
+                (sshClient, shellStream) = await GetConnectionAndShell(portConfig.IpOrName, portConfig.Login, portConfig.Password, portConfig.SuperPassword, cancellationToken);
+
+                EnterInterface(shellStream, portConfig.InterfaceName);
+
+                #region check_vlan_exist
+                IEnumerable<int> vlansOnSwitch = GetOnlyVlanNums(shellStream);
+
+                if (!portConfig.TrunkVlans.All(vl => vlansOnSwitch.Any(vlOnSw => vl == vlOnSw)))
+                    throw new SwitchServiceException(SwitchServiceErrorType.VLANNotExist);
+                #endregion
+
+                shellStream.Expect(SystemViewPromtShellRegex);
+
+                #region setting_for_trunk
+                shellStream.WriteLineAndExpect("port link-type trunk");
+
+                CheckInterfaceOrSupportLinkType();
+
+                shellStream.WriteLineAndExpect("undo port trunk permit vlan all");
+
+                if(portConfig.TrunkVlans.Count() > 0)
+                    shellStream.WriteLineAndExpect($"port trunk permit vlan {string.Join(' ', portConfig.Vlans)}");
+                #endregion
+
+                //wait execute last command
+                shellStream.Expect(SystemViewPromtShellRegex);
+
+            }
+            catch (SwitchServiceException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new SwitchServiceException(SwitchServiceErrorType.Unknown, ex);
+            }
+            finally
+            {
+                shellStream?.Dispose();
+                sshClient?.Dispose();
+            }
+        }
+
+        public async Task ConfigurePort(PortConfigAccess portConfig, CancellationToken cancellationToken = default)
+        {
+            #region validation
+            ArgumentNullException.ThrowIfNull(portConfig);
+            ArgumentException.ThrowIfNullOrWhiteSpace(portConfig.IpOrName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(portConfig.Login);
+            ArgumentNullException.ThrowIfNull(portConfig.Password);
+            ArgumentNullException.ThrowIfNull(portConfig.SuperPassword);
+            ArgumentException.ThrowIfNullOrWhiteSpace(portConfig.InterfaceName);
+            ArgumentNullException.ThrowIfNull(portConfig.Vlans);
+
+            if (portConfig.AccessVlan < 1)
+                throw new ArgumentException("VLAN cant be less 1.");
+            #endregion
+
+            SshClient sshClient = null;
+            ShellStream shellStream = null;
+
+            void CheckInterfaceOrSupportLinkType()
+            {
+                shellStream.Expect(new ExpectAction(new Regex("% Unrecognized command found at '\\^' position\\.|% Wrong parameter found at '\\^' position\\."), _ =>
+                throw new SwitchServiceException(SwitchServiceErrorType.WrongInterface)),
+                        new ExpectAction(SystemViewPromtShellRegex, _ => { }));
+            }
+
+            try
+            {
+                (sshClient, shellStream) = await GetConnectionAndShell(portConfig.IpOrName, portConfig.Login, portConfig.Password, portConfig.SuperPassword, cancellationToken);
+
+                EnterInterface(shellStream, portConfig.InterfaceName);
+
+                #region check_vlan_exist
+                IEnumerable<int> vlansOnSwitch = GetOnlyVlanNums(shellStream);
+
+                if (!vlansOnSwitch.Any(vlOnSw => vlOnSw == portConfig.AccessVlan))
+                    throw new SwitchServiceException(SwitchServiceErrorType.VLANNotExist);
+                #endregion
+
+                #region setting_for_access
+                shellStream.WriteLineAndExpect("port link-type access");
+                CheckInterfaceOrSupportLinkType();
+                shellStream.WriteLineAndExpect($"port access vlan {portConfig.AccessVlan}");
+                #endregion
+
+
+                //wait execute last command
+                shellStream.Expect(SystemViewPromtShellRegex);
+
+            }
+            catch (SwitchServiceException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new SwitchServiceException(SwitchServiceErrorType.Unknown, ex);
+            }
+            finally
             {
                 shellStream?.Dispose();
                 sshClient?.Dispose();
