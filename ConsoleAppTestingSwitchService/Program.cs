@@ -14,7 +14,7 @@ namespace ConsoleAppTestingSwitchService
 
 
             //await switchService5.SettingPort("10.23.34.23", "admin2", "1928", "512900", "GigabitEthernet1/0/3", true, CancellationToken.None, 264);
-
+            /*
             var res = await switchService5.GetSwitchInfo(new ConnectConfig { IpOrName = "10.23.34.23", Login = "admin2", Password = "1928", SuperPassword = "5129001" }, CancellationToken.None);
 
             Console.WriteLine(res.IpOrName);
@@ -27,6 +27,7 @@ namespace ConsoleAppTestingSwitchService
 
             foreach (var port in res.Ports)
                 Console.WriteLine($"{port.Interface} {port.Status} {port.Type} {string.Join(", ", port.Vlans)}");
+            */
         }
     }
 }
