@@ -17,16 +17,12 @@ namespace SwitchManagment.API.SwitchService.Implementations
         {
             ValidateConfig(connectConfig);
 
-            SwitchInfo switchInfo = null;
+            SwitchInfo switchInfo = new SwitchInfo { IpOrName = connectConfig.IpOrName };
 
             await CommonShellStream(shellStream =>
             {
-                switchInfo = new SwitchInfo
-                {
-                    IpOrName = connectConfig.IpOrName,
-                    Vlans = GetVlans(shellStream),
-                    Ports = GetPorts(shellStream)
-                };
+                switchInfo.Vlans = GetVlans(shellStream);
+                switchInfo.Ports = GetPorts(shellStream);
             }, connectConfig, cancellationToken);
 
             return switchInfo;
