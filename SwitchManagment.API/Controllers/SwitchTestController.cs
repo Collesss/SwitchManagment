@@ -27,16 +27,16 @@ namespace SwitchManagment.API.Controllers
 
         // GET: api/<SwitchController>
         [HttpGet]
-        public async Task<IEnumerable<SwitchAnnotationResponse>> Get() =>
-            _mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await _switchRepository.GetAll());
+        public async Task<IEnumerable<SwitchResponse>> Get() =>
+            _mapper.Map<IEnumerable<SwitchResponse>>(await _switchRepository.GetAll());
 
         // GET api/<SwitchController>/5
         [HttpGet("{id}")]
-        public async Task<SwitchAnnotationResponse> Get(int id) =>
-            _mapper.Map<SwitchAnnotationResponse>(await _switchRepository.GetById(id));
+        public async Task<SwitchResponse> Get(int id) =>
+            _mapper.Map<SwitchResponse>(await _switchRepository.GetById(id));
         
         [HttpPost]
-        public async Task<int> Post([FromBody] SwitchCreateRequest switchCreate) =>
+        public async Task<int> Post([FromBody] AdminSwitchCreateRequest switchCreate) =>
             await _switchRepository.Add(_mapper.Map<SwitchEntity>(switchCreate));
 
         /*

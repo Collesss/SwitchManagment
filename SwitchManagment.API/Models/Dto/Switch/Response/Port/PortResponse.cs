@@ -1,4 +1,4 @@
-﻿namespace SwitchManagment.API.Models.Dto.Switch.Response
+﻿namespace SwitchManagment.API.Models.Dto.Switch.Response.Port
 {
     public class PortResponse
     {
@@ -6,7 +6,7 @@
 
         public PortStatusResponse Status { get; set; }
         
-        public bool IsAccess { get; set; }
+        public PortTypeResponse Type { get; set; }
 
         public IEnumerable<int> Vlans { get; set; }
     }

@@ -1,10 +1,9 @@
-﻿using SwitchManagment.API.ValidationAttributes;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace SwitchManagment.API.Models.Dto.Switch
+namespace SwitchManagment.API.Models.Dto.Switch.Request.Get
 {
-    public class Sort
+    public class SortRequest
     {
         //[OnlyValues(["Id", "IpOrName", "Location", "Description"])]
         [AllowedValues(["Id", "IpOrName", "Location", "Description"])]

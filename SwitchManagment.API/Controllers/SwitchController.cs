@@ -8,7 +8,10 @@ using SwitchManagment.API.Extensions;
 using SwitchManagment.API.Models.Dto.Switch;
 using SwitchManagment.API.Models.Dto.Switch.Port;
 using SwitchManagment.API.Models.Dto.Switch.Request;
+using SwitchManagment.API.Models.Dto.Switch.Request.Get;
 using SwitchManagment.API.Models.Dto.Switch.Response;
+using SwitchManagment.API.Models.Dto.Switch.Response.Admin;
+using SwitchManagment.API.Models.Dto.Switch.Response.Get;
 using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -34,17 +37,17 @@ namespace SwitchManagment.API.Controllers
 
         // GET: api/Switch
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SwitchAnnotationResponse>>> GetSwitches() =>
-            Ok(_mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await _context.Switches.ToListAsync()));
+        public async Task<ActionResult<IEnumerable<SwitchResponse>>> GetSwitches() =>
+            Ok(_mapper.Map<IEnumerable<SwitchResponse>>(await _context.Switches.ToListAsync()));
 
 
         [HttpGet("getswitches")]
-        public async Task<ActionResult<SwitchGetAnnotationResponse>> GetSwitches1([FromQuery] SwitchGetRequest switchGet)
+        public async Task<ActionResult<SwitchGetResponse>> GetSwitches1([FromQuery] GetRequest switchGet)
         {
             //Error, this shit cant be translate suka blat, i dont know, try rewrite like my method OrderBy.
             //var filter = _context.Switches.Where(@switch => switchGet.Filters.All(filter => EF.Functions.Like(filter.Key, filter.Value)));
 
-            SwitchGetResponse getResponse = _mapper.Map<SwitchGetResponse>(switchGet);
+            GetResponse getResponse = _mapper.Map<GetResponse>(switchGet);
 
             var filter = _context.Switches.Like(switchGet.Filters);
 
@@ -53,7 +56,6 @@ namespace SwitchManagment.API.Controllers
             int count = await filter.CountAsync();
 
             getResponse.PageNav.CountElements = count;
-
             getResponse.PageNav.PageNum = getResponse.PageNav.PageNum > getResponse.PageNav.PageCount ? getResponse.PageNav.PageCount : getResponse.PageNav.PageNum;
 
             var result = filter
@@ -61,18 +63,46 @@ namespace SwitchManagment.API.Controllers
                 .Skip((getResponse.PageNav.PageNum - 1) * getResponse.PageNav.PageSize)
                 .Take(getResponse.PageNav.PageSize);
 
-            return Ok(new SwitchGetAnnotationResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<SwitchAnnotationResponse>>(await result.ToListAsync())});
+            return Ok(new SwitchGetResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<SwitchResponse>>(await result.ToListAsync())});
         }
-        
+
+
+        [HttpGet("admin/getswitches")]
+        public async Task<ActionResult<AdminSwitchGetResponse>> AdminGetSwitches([FromQuery] GetRequest switchGet)
+        {
+            //Error, this shit cant be translate suka blat, i dont know, try rewrite like my method OrderBy.
+            //var filter = _context.Switches.Where(@switch => switchGet.Filters.All(filter => EF.Functions.Like(filter.Key, filter.Value)));
+
+            GetResponse getResponse = _mapper.Map<GetResponse>(switchGet);
+
+            var filter = _context.Switches.Like(switchGet.Filters);
+
+            //using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
+
+            int count = await filter.CountAsync();
+
+            getResponse.PageNav.CountElements = count;
+            getResponse.PageNav.PageNum = getResponse.PageNav.PageNum > getResponse.PageNav.PageCount ? getResponse.PageNav.PageCount : getResponse.PageNav.PageNum;
+
+            var result = filter
+                .OrderBy(getResponse.Sort.Field, getResponse.Sort.IsAscending)
+                .Skip((getResponse.PageNav.PageNum - 1) * getResponse.PageNav.PageSize)
+                .Take(getResponse.PageNav.PageSize);
+
+            return Ok(new AdminSwitchGetResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<AdminSwitchResponse>>(await result.ToListAsync()) });
+        }
+
 
         // GET: api/Switch/5
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SwitchAnnotationResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id) =>
-            await _context.Switches.FindAsync(id) is SwitchEntity switchEntity ? Ok(_mapper.Map<SwitchAnnotationResponse>(switchEntity)) : 
+        public async Task<ActionResult<SwitchResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id) =>
+            await _context.Switches.FindAsync(id) is SwitchEntity switchEntity ? Ok(_mapper.Map<SwitchResponse>(switchEntity)) : 
             Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+
+
 
 
         // PUT: api/Switch/5
@@ -110,11 +140,11 @@ namespace SwitchManagment.API.Controllers
 
         // POST: api/Switch
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
+        [HttpPost("admin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<int>> PostSwitch([FromBody]SwitchCreateRequest switchEntity)
+        public async Task<ActionResult<int>> AdminAddSwitch([FromBody]AdminSwitchCreateRequest switchEntity)
         {
             try
             {
@@ -125,16 +155,17 @@ namespace SwitchManagment.API.Controllers
             }
             catch(DbUpdateException e) when(e.InnerException is SqliteException innerException && innerException.Message == "SQLite Error 19: 'UNIQUE constraint failed: Switches.IpOrName'.")
             {
+                //throw new HttpRequestException("Switch with this 'IpOrName' already exist.", e, System.Net.HttpStatusCode.Conflict);
                 return Problem(detail: "Switch with this 'IpOrName' already exist.", statusCode: StatusCodes.Status409Conflict);
             }
         }
 
         // DELETE: api/Switch/5
-        [HttpDelete("{id}")]
+        [HttpDelete("admin/{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteSwitch([Range(1, int.MaxValue)][FromRoute]int id)
+        public async Task<IActionResult> AdminDeleteSwitch([Range(1, int.MaxValue)][FromRoute]int id)
         {
             try
             {
@@ -150,16 +181,16 @@ namespace SwitchManagment.API.Controllers
         }
 
 
-        [HttpPut("{id}/access")]
-        public Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, PortSettingAccess portSetting)
+        [HttpPut("{id}/port/access")]
+        public Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, ConfigurePortAccessRequest portSetting)
         {
 
             throw new Exception("Test Exception");
         }
 
 
-        [HttpPut("{id}/trunk")]
-        public Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, PortSettingTrunk portSetting)
+        [HttpPut("{id}/port/trunk")]
+        public Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, ConfigurePortTrunkRequest portSetting)
         {
 
             throw new Exception("Test Exception");

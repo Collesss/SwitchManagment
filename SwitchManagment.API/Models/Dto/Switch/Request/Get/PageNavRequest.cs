@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace SwitchManagment.API.Models.Dto.Switch.Request
+namespace SwitchManagment.API.Models.Dto.Switch.Request.Get
 {
     public class PageNavRequest
     {

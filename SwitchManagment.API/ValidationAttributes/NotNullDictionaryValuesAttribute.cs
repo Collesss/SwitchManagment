@@ -3,9 +3,9 @@
 namespace SwitchManagment.API.ValidationAttributes
 {
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
-    public class NotNullDictionaryValues : ValidationAttribute
+    public class NotNullDictionaryValuesAttribute : ValidationAttribute
     {
-        public NotNullDictionaryValues()
+        public NotNullDictionaryValuesAttribute()
         {
             ErrorMessage = $"Value in dictionary cant be null.";
         }

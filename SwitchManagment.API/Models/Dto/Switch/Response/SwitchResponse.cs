@@ -1,6 +1,6 @@
 ﻿namespace SwitchManagment.API.Models.Dto.Switch.Response
 {
-    public class SwitchAnnotationResponse
+    public class SwitchResponse
     {
         public int Id { get; set; }
         

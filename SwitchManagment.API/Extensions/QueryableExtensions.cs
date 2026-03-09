@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
 
 namespace SwitchManagment.API.Extensions
 {
@@ -15,6 +13,8 @@ namespace SwitchManagment.API.Extensions
 
         private readonly static MethodInfo _orderByDescendingGeneric;
 
+        private readonly static MethodInfo _efLike;
+
         static QueryableExtensions()
         {
             _expressionLambdaGeneric = typeof(Expression).GetMethods().Single(methInf => methInf.Name == "Lambda" && methInf.GetGenericArguments().Length == 1 && methInf.GetParameters().Length == 2 &&
@@ -25,6 +25,8 @@ namespace SwitchManagment.API.Extensions
 
             _orderByDescendingGeneric = typeof(Queryable).GetMethods()
                 .Single(methInf => methInf.Name == "OrderByDescending" && methInf.GetParameters().Length == 2);
+
+            _efLike = typeof(DbFunctionsExtensions).GetMethod("Like", [typeof(DbFunctions), typeof(string), typeof(string)]);
         }
 
         public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> queryable, string propertyOrFieldName, bool ascending = true)
@@ -75,17 +77,13 @@ namespace SwitchManagment.API.Extensions
 
             return (lastExpression, lastType);
         }
-
-
-
+        
         
         public static IQueryable<T> Like<T>(this IQueryable<T> queryable, Dictionary<string, string> propertyAndPatterns)
         {
             ArgumentNullException.ThrowIfNull(propertyAndPatterns, nameof(propertyAndPatterns));
 
             Type type = typeof(T);
-
-            MethodInfo efLike = typeof(DbFunctionsExtensions).GetMethod("Like", [typeof(DbFunctions), typeof(string), typeof(string)]);
 
             MethodInfo toString = typeof(object).GetMethod("ToString");
 
@@ -94,7 +92,7 @@ namespace SwitchManagment.API.Extensions
             ParameterExpression parameter = Expression.Parameter(typeof(T));
 
             IEnumerable<MethodCallExpression> callLikeExpressions = propertyAndPatterns
-                .Select(propAndPat => Expression.Call(efLike, nullArg, 
+                .Select(propAndPat => Expression.Call(_efLike, nullArg, 
                 Expression.Call(GetFieldOrPropertyExpression(type, parameter, propAndPat.Key).memberExpression, toString), 
                 Expression.Constant(propAndPat.Value)));
 
