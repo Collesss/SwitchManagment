@@ -23,6 +23,8 @@ namespace SwitchManagment.API
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            builder.Services.AddProblemDetails();
+            
             //builder.Services.AddScoped<ISwitchRepository, SwitchRepository>();
 
             builder.Services.AddDbContext<ApplicationContext>(opts => 
@@ -44,6 +46,26 @@ namespace SwitchManagment.API
                 app.UseSwaggerUI(opts =>
                     opts.SwaggerEndpoint("/openapi/v1.json", "v1"));
             }
+
+            app.UseStatusCodePages();
+            app.UseExceptionHandler();
+
+            //app.UseDeveloperExceptionPage();
+            /*
+            app.UseDeveloperExceptionPage(); -- используется по умолчанию не форматированный вывод.
+
+            builder.Services.AddProblemDetails(); -- выдаёт форматированный подробный вывод.
+
+            app.UseExceptionHandler(); -- вместе с builder.Services.AddProblemDetails(); даёт сокращённый форматированный вывод.
+
+            app.UseStatusCodePages(); -- пока не совсем понял, но при не правильном маршруте выдаёт пустой ответ в отличии от app.UseDeveloperExceptionPage();
+
+            builder.Services.AddProblemDetails();
+            app.UseExceptionHandler();
+            app.UseStatusCodePages();
+            если использовать три команды выше, то будет выдаваться сокращённый форматированный ответ даже на ошибки маршрута, без app.UseStatusCodePages(); ошибки марштура не дают ответа.
+            */
+
 
             app.UseHttpsRedirection();
 

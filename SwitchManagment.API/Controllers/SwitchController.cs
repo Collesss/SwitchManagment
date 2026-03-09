@@ -6,10 +6,12 @@ using SwitchManagment.API.Db;
 using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Extensions;
 using SwitchManagment.API.Models.Dto.Switch;
+using SwitchManagment.API.Models.Dto.Switch.Port;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Response;
 using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace SwitchManagment.API.Controllers
 {
@@ -147,9 +149,23 @@ namespace SwitchManagment.API.Controllers
             }
         }
 
-        private bool SwitchEntityExists(int id)
+
+        [HttpPut("{id}/access")]
+        public Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, PortSettingAccess portSetting)
         {
-            return _context.Switches.Any(e => e.Id == id);
+
+            throw new Exception("Test Exception");
         }
+
+
+        [HttpPut("{id}/trunk")]
+        public Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, PortSettingTrunk portSetting)
+        {
+
+            throw new Exception("Test Exception");
+        }
+
+        private async Task<bool> SwitchEntityExists(int id) =>
+            await _context.Switches.AnyAsync(e => e.Id == id);
     }
 }

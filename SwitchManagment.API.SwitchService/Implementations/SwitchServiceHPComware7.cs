@@ -12,7 +12,8 @@ using System.Threading.Tasks;
 
 namespace SwitchManagment.API.SwitchService.Implementations
 {
-    public class SwitchServiceHPComware7 : ISwitchService
+    
+    public class SwitchServiceHPComware7
     {
         public async Task<SwitchInfo> GetSwitchInfo(string ipOrName, string login, string password, string superPassword, CancellationToken cancellationToken = default)
         {
@@ -146,4 +147,5 @@ namespace SwitchManagment.API.SwitchService.Implementations
             sshClient.Disconnect();
         }
     }
+
 }
