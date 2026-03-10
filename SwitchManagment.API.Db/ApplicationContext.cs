@@ -8,7 +8,7 @@ namespace SwitchManagment.API.Db
     {
         public DbSet<SwitchEntity> Switches { get; set; }
 
-        public DbSet<CredentialEntity> Credentials { get; set; }
+        //public DbSet<CredentialEntity> Credentials { get; set; }
 
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
         {
@@ -25,10 +25,19 @@ namespace SwitchManagment.API.Db
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             IEnumerable<SwitchEntity> initSwitches = Enumerable.Range(1, 5)
-                .Select(i => new SwitchEntity() { Id = i, IpOrName = $"192.168.0.{i}", Location = $"Loc{i}", Description = $"Desc{i}" });
+                .Select(i => new SwitchEntity() 
+                { 
+                    Id = i, 
+                    IpOrName = $"192.168.0.{i}", 
+                    Location = $"Loc{i}", 
+                    Description = $"Desc{i}", 
+                    Login = $"Admin{i}", 
+                    EncryptedPassword = $"EP{i}", 
+                    EncryptedSuperPassword = $"ESP{i}" 
+                });
 
             modelBuilder.ApplyConfiguration(new SwitchEntityConfiguration());
-            modelBuilder.ApplyConfiguration(new CredentialEntityConfiguration());
+            //modelBuilder.ApplyConfiguration(new CredentialEntityConfiguration());
 
             modelBuilder.Entity<SwitchEntity>().HasData(initSwitches);
 

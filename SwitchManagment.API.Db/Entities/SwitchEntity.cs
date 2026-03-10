@@ -11,8 +11,10 @@
         public string Description { get; set; }
 
 
-        public int? CredentialId { get; set; }
+        public string Login { get; set; }
 
-        public CredentialEntity Credential { get; set; }
+        public string EncryptedPassword { get; set; }
+
+        public string EncryptedSuperPassword { get; set; }
     }
 }

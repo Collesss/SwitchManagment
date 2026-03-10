@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,8 @@ using SwitchManagment.API.Models.Dto.Switch.Request.Get;
 using SwitchManagment.API.Models.Dto.Switch.Response;
 using SwitchManagment.API.Models.Dto.Switch.Response.Admin;
 using SwitchManagment.API.Models.Dto.Switch.Response.Get;
+using SwitchManagment.API.Models.Dto.Switch.Response.Port;
+using SwitchManagment.API.SwitchService.Data;
 using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -25,14 +28,17 @@ namespace SwitchManagment.API.Controllers
         private readonly ILogger<SwitchTestController> _logger;
         private readonly IMapper _mapper;
         private readonly ApplicationContext _context;
-        //private readonly ISwitchService _switchService;
+        private readonly ISwitchService _switchService;
+        private readonly IDataProtector _dataProtector;
 
-        public SwitchController(ILogger<SwitchTestController> logger, IMapper mapper, ApplicationContext context, ISwitchService switchService)
+
+        public SwitchController(ILogger<SwitchTestController> logger, IMapper mapper, ApplicationContext context, ISwitchService switchService, IDataProtectionProvider dataProtectorProvider)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            //_switchService = switchService ?? throw new ArgumentNullException(nameof(switchService));
+            _switchService = switchService ?? throw new ArgumentNullException(nameof(switchService));
+            _dataProtector = dataProtectorProvider.CreateProtector("SwitchController") ?? throw new ArgumentNullException(nameof(dataProtectorProvider));
         }
 
         // GET: api/Switch
@@ -41,66 +47,84 @@ namespace SwitchManagment.API.Controllers
             Ok(_mapper.Map<IEnumerable<SwitchResponse>>(await _context.Switches.ToListAsync()));
 
 
-        [HttpGet("getswitches")]
-        public async Task<ActionResult<SwitchGetResponse>> GetSwitches1([FromQuery] GetRequest switchGet)
+        private async Task<(GetResponse getResponse, IEnumerable<SwitchEntity>)> GetSwitchesBase(GetRequest switchGet)
         {
-            //Error, this shit cant be translate suka blat, i dont know, try rewrite like my method OrderBy.
-            //var filter = _context.Switches.Where(@switch => switchGet.Filters.All(filter => EF.Functions.Like(filter.Key, filter.Value)));
-
             GetResponse getResponse = _mapper.Map<GetResponse>(switchGet);
 
             var filter = _context.Switches.Like(switchGet.Filters);
-
-            //using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
 
             int count = await filter.CountAsync();
 
             getResponse.PageNav.CountElements = count;
             getResponse.PageNav.PageNum = getResponse.PageNav.PageNum > getResponse.PageNav.PageCount ? getResponse.PageNav.PageCount : getResponse.PageNav.PageNum;
 
-            var result = filter
+            var result = await filter
                 .OrderBy(getResponse.Sort.Field, getResponse.Sort.IsAscending)
                 .Skip((getResponse.PageNav.PageNum - 1) * getResponse.PageNav.PageSize)
-                .Take(getResponse.PageNav.PageSize);
+                .Take(getResponse.PageNav.PageSize)
+                .ToListAsync();
 
-            return Ok(new SwitchGetResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<SwitchResponse>>(await result.ToListAsync())});
+            return (getResponse, result);
+        }
+
+
+        [HttpGet("getswitches")]
+        public async Task<ActionResult<SwitchGetResponse>> GetSwitches1([FromQuery] GetRequest switchGet)
+        {
+            (GetResponse getResponse, IEnumerable<SwitchEntity> switches) = await GetSwitchesBase(switchGet);
+
+            return Ok(new SwitchGetResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<SwitchResponse>>(switches) });
         }
 
 
         [HttpGet("admin/getswitches")]
         public async Task<ActionResult<AdminSwitchGetResponse>> AdminGetSwitches([FromQuery] GetRequest switchGet)
         {
-            //Error, this shit cant be translate suka blat, i dont know, try rewrite like my method OrderBy.
-            //var filter = _context.Switches.Where(@switch => switchGet.Filters.All(filter => EF.Functions.Like(filter.Key, filter.Value)));
+            (GetResponse getResponse, IEnumerable<SwitchEntity> switches) = await GetSwitchesBase(switchGet);
 
-            GetResponse getResponse = _mapper.Map<GetResponse>(switchGet);
-
-            var filter = _context.Switches.Like(switchGet.Filters);
-
-            //using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
-
-            int count = await filter.CountAsync();
-
-            getResponse.PageNav.CountElements = count;
-            getResponse.PageNav.PageNum = getResponse.PageNav.PageNum > getResponse.PageNav.PageCount ? getResponse.PageNav.PageCount : getResponse.PageNav.PageNum;
-
-            var result = filter
-                .OrderBy(getResponse.Sort.Field, getResponse.Sort.IsAscending)
-                .Skip((getResponse.PageNav.PageNum - 1) * getResponse.PageNav.PageSize)
-                .Take(getResponse.PageNav.PageSize);
-
-            return Ok(new AdminSwitchGetResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<AdminSwitchResponse>>(await result.ToListAsync()) });
+            return Ok(new AdminSwitchGetResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<AdminSwitchResponse>>(switches) });
         }
 
 
-        // GET: api/Switch/5
+        /*
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SwitchResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id) =>
-            await _context.Switches.FindAsync(id) is SwitchEntity switchEntity ? Ok(_mapper.Map<SwitchResponse>(switchEntity)) : 
-            Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+        public async Task<ActionResult<SwitchWithPortsResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute] int id)
+        {
+            SwitchEntity @switch = await _context.Switches.FindAsync(id) is SwitchEntity switchEntity ? Ok(_mapper.Map<SwitchResponse>(switchEntity)) :
+                Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+
+        }
+        */
+
+        [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<SwitchWithPortsResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id)
+        {
+            if(await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
+            {
+                var switchInfo = await _switchService.GetSwitchInfo(new ConnectConfig
+                {
+                    IpOrName = switchEntity.IpOrName,
+                    Login = switchEntity.Login,
+                    Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword),
+                    SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword)
+                });
+
+                SwitchWithPortsResponse switchWithPortsResponse = _mapper.Map<SwitchWithPortsResponse>(switchEntity);
+
+                switchWithPortsResponse.Ports = _mapper.Map<IEnumerable<PortResponse>>(switchInfo.Ports);
+                switchWithPortsResponse.VlansInfo = _mapper.Map<IEnumerable<VlanResponse>>(switchInfo.Vlans);
+
+                return switchWithPortsResponse;
+            }
+
+            return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+        }
 
 
 
@@ -138,17 +162,20 @@ namespace SwitchManagment.API.Controllers
         }
         */
 
-        // POST: api/Switch
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("admin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<int>> AdminAddSwitch([FromBody]AdminSwitchCreateRequest switchEntity)
+        public async Task<ActionResult<int>> AdminAddSwitch([FromBody]AdminSwitchCreateRequest switchCreateRequest)
         {
             try
             {
-                var addResult = (await _context.Switches.AddAsync(_mapper.Map<SwitchEntity>(switchEntity))).Entity;
+                SwitchEntity switchEntity = _mapper.Map<SwitchEntity>(switchCreateRequest);
+                switchEntity.EncryptedPassword = _dataProtector.Protect(switchCreateRequest.Password);
+                switchEntity.EncryptedSuperPassword = _dataProtector.Protect(switchCreateRequest.SuperPassword);
+
+
+                var addResult = (await _context.Switches.AddAsync(switchEntity)).Entity;
                 await _context.SaveChangesAsync();
 
                 return CreatedAtAction("GetSwitch", new { id = addResult.Id }, addResult.Id);
@@ -160,7 +187,7 @@ namespace SwitchManagment.API.Controllers
             }
         }
 
-        // DELETE: api/Switch/5
+
         [HttpDelete("admin/{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

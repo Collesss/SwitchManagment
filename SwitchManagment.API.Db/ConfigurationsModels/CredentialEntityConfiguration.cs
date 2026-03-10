@@ -4,6 +4,7 @@ using SwitchManagment.API.Db.Entities;
 
 namespace SwitchManagment.API.Db.ConfigurationsModels
 {
+    /*
     internal class CredentialEntityConfiguration : IEntityTypeConfiguration<CredentialEntity>
     {
         public void Configure(EntityTypeBuilder<CredentialEntity> builder)
@@ -16,4 +17,5 @@ namespace SwitchManagment.API.Db.ConfigurationsModels
             //builder.Property(credential => credential.SuperPassword).IsRequired();
         }
     }
+    */
 }

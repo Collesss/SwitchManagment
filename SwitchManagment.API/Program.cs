@@ -17,7 +17,6 @@ namespace SwitchManagment.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             #region AddServices
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -32,9 +31,9 @@ namespace SwitchManagment.API
 
             builder.Services.AddAutoMapper(ca => ca.AddProfile<AutoMapperProfile>());
             builder.Services.AddTransient<ISwitchService, SwitchServiceHPComware5>();
-            builder.Services.AddDataProtection();
+            builder.Services.AddDataProtection(opts => opts.ApplicationDiscriminator = "SwitchManagmentApi");
             #endregion
-
+            
             #region UseMiddleware
             var app = builder.Build();
             

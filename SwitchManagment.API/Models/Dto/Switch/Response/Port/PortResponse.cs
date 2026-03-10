@@ -2,7 +2,7 @@
 {
     public class PortResponse
     {
-        public string Name { get; set; }
+        public string Interface { get; set; }
 
         public PortStatusResponse Status { get; set; }
         
