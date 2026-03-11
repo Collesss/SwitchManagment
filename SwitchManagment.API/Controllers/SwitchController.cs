@@ -17,6 +17,8 @@ using SwitchManagment.API.Models.Dto.Switch.Response.Port;
 using SwitchManagment.API.SwitchService.Data;
 using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SwitchManagment.API.Controllers
@@ -99,6 +101,25 @@ namespace SwitchManagment.API.Controllers
         }
         */
 
+        private ConnectConfig GetConnectConfig(SwitchEntity switchEntity) =>
+            new ConnectConfig
+            {
+                IpOrName = switchEntity.IpOrName,
+                Login = switchEntity.Login,
+                Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword),
+                SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword)
+            };
+
+        private SwitchWithPortsResponse GetSwitchWithPortsResponse(SwitchEntity switchEntity, SwitchInfo switchInfo)
+        {
+            SwitchWithPortsResponse switchWithPortsResponse = _mapper.Map<SwitchWithPortsResponse>(switchEntity);
+
+            switchWithPortsResponse.Ports = _mapper.Map<IEnumerable<PortResponse>>(switchInfo.Ports);
+            switchWithPortsResponse.VlansInfo = _mapper.Map<IEnumerable<VlanResponse>>(switchInfo.Vlans);
+
+            return switchWithPortsResponse;
+        }
+
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -107,25 +128,44 @@ namespace SwitchManagment.API.Controllers
         {
             if(await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
             {
-                var switchInfo = await _switchService.GetSwitchInfo(new ConnectConfig
-                {
-                    IpOrName = switchEntity.IpOrName,
-                    Login = switchEntity.Login,
-                    Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword),
-                    SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword)
-                });
+                var switchInfo = await _switchService.GetSwitchInfo(GetConnectConfig(switchEntity));
 
-                SwitchWithPortsResponse switchWithPortsResponse = _mapper.Map<SwitchWithPortsResponse>(switchEntity);
-
-                switchWithPortsResponse.Ports = _mapper.Map<IEnumerable<PortResponse>>(switchInfo.Ports);
-                switchWithPortsResponse.VlansInfo = _mapper.Map<IEnumerable<VlanResponse>>(switchInfo.Vlans);
-
-                return switchWithPortsResponse;
+                return GetSwitchWithPortsResponse(switchEntity, switchInfo);
             }
 
             return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
         }
 
+        private string GetHash(string str) =>
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(str)));
+
+        private AdminSwitchWithPortsResponse AdminGetSwitchWithPortsResponse(SwitchEntity switchEntity, SwitchInfo switchInfo)
+        {
+            AdminSwitchWithPortsResponse switchWithPortsResponse = _mapper.Map<AdminSwitchWithPortsResponse>(switchEntity);
+            switchWithPortsResponse.HashPassword = GetHash(_dataProtector.Unprotect(switchEntity.EncryptedPassword));
+            switchWithPortsResponse.HashSuperPassword = GetHash(_dataProtector.Unprotect(switchEntity.EncryptedSuperPassword));
+
+            switchWithPortsResponse.Ports = _mapper.Map<IEnumerable<PortResponse>>(switchInfo.Ports);
+            switchWithPortsResponse.VlansInfo = _mapper.Map<IEnumerable<VlanResponse>>(switchInfo.Vlans);
+
+            return switchWithPortsResponse;
+        }
+
+        [HttpGet("admin/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<AdminSwitchWithPortsResponse>> AdminGetSwitch([Range(1, int.MaxValue)][FromRoute] int id)
+        {
+            if (await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
+            {
+                var switchInfo = await _switchService.GetSwitchInfo(GetConnectConfig(switchEntity));
+
+                return AdminGetSwitchWithPortsResponse(switchEntity, null);
+            }
+
+            return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+        }
 
 
 
