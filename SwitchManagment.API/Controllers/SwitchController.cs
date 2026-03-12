@@ -15,6 +15,7 @@ using SwitchManagment.API.Models.Dto.Switch.Response.Admin;
 using SwitchManagment.API.Models.Dto.Switch.Response.Get;
 using SwitchManagment.API.Models.Dto.Switch.Response.Port;
 using SwitchManagment.API.SwitchService.Data;
+using SwitchManagment.API.SwitchService.Exceptions;
 using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
@@ -24,6 +25,7 @@ using System.Threading.Tasks;
 namespace SwitchManagment.API.Controllers
 {
     [Route("api/[controller]")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     [ApiController]
     public class SwitchController : ControllerBase
     {
@@ -248,15 +250,44 @@ namespace SwitchManagment.API.Controllers
         }
 
 
-        [HttpPut("{id}/port/access")]
-        public Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, ConfigurePortAccessRequest portSetting)
-        {
 
-            throw new Exception("Test Exception");
+
+        [HttpPut("{id}/port/access")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, ConfigurePortAccessRequest portSetting)
+        {
+            if (await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
+            {
+                var switchInfo = await _switchService.GetSwitchInfo(GetConnectConfig(switchEntity));
+
+                PortConfigAccess portConfigAccess = _mapper.Map<PortConfigAccess>(switchInfo);
+                portConfigAccess.Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword);
+                portConfigAccess.SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword);
+
+                _mapper.Map(portSetting, portConfigAccess);
+
+                try
+                {
+                    await _switchService.ConfigurePort(portConfigAccess);
+                }
+                catch (SwitchServiceException e) when (e.ErrorType == SwitchServiceErrorType.WrongInterface)
+                {
+                    return Problem(detail: "Interface with this name not exist.", statusCode: StatusCodes.Status404NotFound);
+                }
+
+                return NoContent();
+            }
+
+            return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
         }
 
 
         [HttpPut("{id}/port/trunk")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         public Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, ConfigurePortTrunkRequest portSetting)
         {
 
