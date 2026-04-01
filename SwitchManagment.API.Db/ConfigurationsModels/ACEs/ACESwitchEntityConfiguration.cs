@@ -17,15 +17,6 @@ namespace SwitchManagment.API.Db.ConfigurationsModels.ACL
                 .HasForeignKey(aceSw => aceSw.SwitchId)
                 .HasPrincipalKey(sw => sw.Id)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            /*
-            builder.HasOne(sw => sw.Credential)
-                .WithMany()
-                .HasForeignKey(sw => sw.CredentialId)
-                .HasPrincipalKey(credential => credential.Id)
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
-            */
         }
     }
 }

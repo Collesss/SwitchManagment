@@ -1,12 +1,27 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.Db.ConfigurationsModels;
+using SwitchManagment.API.Db.ConfigurationsModels.ACEs;
+using SwitchManagment.API.Db.ConfigurationsModels.ACL;
 using SwitchManagment.API.Db.Entities;
+using SwitchManagment.API.Db.Entities.ACL.ACEs;
 
 namespace SwitchManagment.API.Db
 {
     public class ApplicationContext : DbContext
     {
         public DbSet<SwitchEntity> Switches { get; set; }
+
+        public DbSet<InterfaceEntity> Interfaces { get; set; }
+
+        #region ACL
+        public DbSet<ACESwitchEntity> ACLSwitches { get; set; }
+
+        public DbSet<ACEInterfaceEntity> ACEInterfaces { get; set; }
+
+        public DbSet<ACEVlanEntity> ACEVlans { get; set; }
+
+        public DbSet<ACEVlanOnInterfaceEntity> ACEVlanOnInterfaces { get; set; }
+        #endregion
 
         //public DbSet<CredentialEntity> Credentials { get; set; }
 
@@ -24,6 +39,7 @@ namespace SwitchManagment.API.Db
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            /*
             IEnumerable<SwitchEntity> initSwitches = Enumerable.Range(1, 5)
                 .Select(i => new SwitchEntity() 
                 { 
@@ -35,11 +51,18 @@ namespace SwitchManagment.API.Db
                     EncryptedPassword = $"EP{i}", 
                     EncryptedSuperPassword = $"ESP{i}" 
                 });
+            */
+            //modelBuilder.Entity<SwitchEntity>().HasData(initSwitches);
 
             modelBuilder.ApplyConfiguration(new SwitchEntityConfiguration());
-            //modelBuilder.ApplyConfiguration(new CredentialEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new InterfaceEntityConfiguration());
 
-            modelBuilder.Entity<SwitchEntity>().HasData(initSwitches);
+            #region ACL
+            modelBuilder.ApplyConfiguration(new ACESwitchEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new ACEInterfaceEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new ACEVlanEntityConfiguration());
+            modelBuilder.ApplyConfiguration(new ACEVlanOnInterfaceEntityConfiguration());
+            #endregion
 
             base.OnModelCreating(modelBuilder);
         }

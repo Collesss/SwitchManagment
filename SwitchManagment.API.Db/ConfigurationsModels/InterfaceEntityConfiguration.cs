@@ -12,14 +12,12 @@ namespace SwitchManagment.API.Db.ConfigurationsModels
 
             builder.HasAlternateKey(i => new { i.SwitchId , i.IdOnSwitch });
 
-            /*
-            builder.HasOne(sw => sw.Credential)
+            builder
+                .HasOne<SwitchEntity>()
                 .WithMany()
-                .HasForeignKey(sw => sw.CredentialId)
-                .HasPrincipalKey(credential => credential.Id)
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
-            */
+                .HasForeignKey(i => i.SwitchId)
+                .HasPrincipalKey(sw => sw.Id)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
