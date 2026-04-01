@@ -10,6 +10,12 @@ namespace SwitchManagment.API.Db.ConfigurationsModels
         {
             builder.HasKey(i => i.Id);
 
+            builder.Property(i => i.Name)
+                .IsRequired();
+
+            builder.HasIndex(i => new { i.Name, i.SwitchId, i.IdOnSwitch })
+                .IsUnique();
+
             builder.HasAlternateKey(i => new { i.SwitchId , i.IdOnSwitch });
 
             builder

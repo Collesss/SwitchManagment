@@ -9,7 +9,13 @@ namespace SwitchManagment.API.Db.ConfigurationsModels.ACEs
     {
         public void Configure(EntityTypeBuilder<ACEInterfaceEntity> builder)
         {
-            builder.HasKey(i => i.Id);
+            builder.HasKey(aceI => aceI.Id);
+
+            builder.Property(aceI => aceI.GroupSID)
+                .IsRequired();
+
+            builder.HasIndex(aceI => new { aceI.GroupSID, aceI.SwitchId, aceI.IdOnSwitch })
+                .IsUnique();
 
             builder
                 .HasOne<InterfaceEntity>()

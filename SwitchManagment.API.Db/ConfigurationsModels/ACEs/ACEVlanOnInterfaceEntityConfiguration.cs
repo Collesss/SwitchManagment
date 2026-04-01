@@ -11,6 +11,12 @@ namespace SwitchManagment.API.Db.ConfigurationsModels.ACEs
         {
             builder.HasKey(aceVlOnSw => aceVlOnSw.Id);
 
+            builder.Property(aceVlOnSw => aceVlOnSw.GroupSID)
+                .IsRequired();
+
+            builder.HasIndex(aceVlOnSw => new { aceVlOnSw.GroupSID, aceVlOnSw.SwitchId, aceVlOnSw.IdOnSwitch, aceVlOnSw.Vlan })
+                .IsUnique();
+
             builder
                 .HasOne<InterfaceEntity>()
                 .WithMany()
