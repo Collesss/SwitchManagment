@@ -19,7 +19,7 @@ namespace SwitchManagment.API.Db.ConfigurationsModels.ACL
 
             builder
                 .HasOne<SwitchEntity>()
-                .WithMany()
+                .WithMany(sw => sw.ACLSwitch)
                 .HasForeignKey(aceSw => aceSw.SwitchId)
                 .HasPrincipalKey(sw => sw.Id)
                 .OnDelete(DeleteBehavior.Cascade);

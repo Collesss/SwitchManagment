@@ -20,7 +20,7 @@ namespace SwitchManagment.API.Db.ConfigurationsModels
 
             builder
                 .HasOne<SwitchEntity>()
-                .WithMany()
+                .WithMany(sw => sw.Interfaces)
                 .HasForeignKey(i => i.SwitchId)
                 .HasPrincipalKey(sw => sw.Id)
                 .OnDelete(DeleteBehavior.Cascade);

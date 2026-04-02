@@ -1,4 +1,6 @@
-﻿namespace SwitchManagment.API.Db.Entities
+﻿using SwitchManagment.API.Db.Entities.ACL.ACEs;
+
+namespace SwitchManagment.API.Db.Entities
 {
     public class SwitchEntity
     {
@@ -16,5 +18,12 @@
         public string EncryptedPassword { get; set; }
 
         public string EncryptedSuperPassword { get; set; }
+        
+
+        public IEnumerable<InterfaceEntity> Interfaces { get; set; }
+        
+        public IEnumerable<ACESwitchEntity> ACLSwitch { get; set; }
+        
+        public IEnumerable<ACEVlanEntity> ACLVlans { get; set; }
     }
 }

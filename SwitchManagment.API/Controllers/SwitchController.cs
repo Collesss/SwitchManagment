@@ -253,43 +253,57 @@ namespace SwitchManagment.API.Controllers
 
 
 
-        [HttpPut("{id}/port/access")]
+        [HttpPut("{id}/port/{portId}/access")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, ConfigurePortAccessRequest portSetting)
+        public async Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, [Range(1, int.MaxValue)][FromRoute] int portId, ConfigurePortAccessRequest portSetting)
         {
-            if (await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
+
+            SwitchEntity switchEntity = await _context.Switches
+                .Include(sw => sw.Interfaces)
+                .ThenInclude(i => i.ACLVlans)
+                .FirstOrDefaultAsync(sw => sw.Id == id);
+
+            //if (await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
+            if (switchEntity is not null)
             {
-                var switchInfo = await _switchService.GetSwitchInfo(GetConnectConfig(switchEntity));
+                InterfaceEntity interfaceEntity = switchEntity.Interfaces.FirstOrDefault(i => i.IdOnSwitch == portId);
 
-                PortConfigAccess portConfigAccess = _mapper.Map<PortConfigAccess>(switchInfo);
-                portConfigAccess.Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword);
-                portConfigAccess.SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword);
-
-                _mapper.Map(portSetting, portConfigAccess);
-
-                try
+                if(interfaceEntity is not null)
                 {
-                    await _switchService.ConfigurePort(portConfigAccess);
-                }
-                catch (SwitchServiceException e) when (e.ErrorType == SwitchServiceErrorType.WrongInterface)
-                {
-                    return Problem(detail: "Interface with this name not exist.", statusCode: StatusCodes.Status404NotFound);
+                    var switchInfo = await _switchService.GetSwitchInfo(GetConnectConfig(switchEntity));
+
+                    PortConfigAccess portConfigAccess = _mapper.Map<PortConfigAccess>(switchInfo);
+                    portConfigAccess.Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword);
+                    portConfigAccess.SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword);
+
+                    _mapper.Map(portSetting, portConfigAccess);
+
+                    try
+                    {
+                        await _switchService.ConfigurePort(portConfigAccess);
+                    }
+                    catch (SwitchServiceException e) when (e.ErrorType == SwitchServiceErrorType.WrongInterface)
+                    {
+                        return Problem(detail: "Interface with this name not exist.", statusCode: StatusCodes.Status404NotFound);
+                    }
+
+                    return NoContent();
                 }
 
-                return NoContent();
+                return Problem(detail: "Interface with this 'portId' not exist.", statusCode: StatusCodes.Status404NotFound);
             }
 
             return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
         }
 
 
-        [HttpPut("{id}/port/trunk")]
+        [HttpPut("{id}/port/{portId}/trunk")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, ConfigurePortTrunkRequest portSetting)
+        public Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, [Range(1, int.MaxValue)][FromRoute] int portId, ConfigurePortTrunkRequest portSetting)
         {
 
             throw new Exception("Test Exception");

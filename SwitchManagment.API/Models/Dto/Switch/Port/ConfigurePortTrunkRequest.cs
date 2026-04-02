@@ -2,7 +2,7 @@
 
 namespace SwitchManagment.API.Models.Dto.Switch.Port
 {
-    public class ConfigurePortTrunkRequest : ConfigurePort
+    public class ConfigurePortTrunkRequest
     {
         [VlanList]
         public IEnumerable<int> Vlans = new List<int>();

@@ -2,7 +2,7 @@
 
 namespace SwitchManagment.API.Models.Dto.Switch.Port
 {
-    public class ConfigurePortAccessRequest : ConfigurePort
+    public class ConfigurePortAccessRequest
     {
         [Range(1, 4094)]
         public int Vlan {  get; set; }
