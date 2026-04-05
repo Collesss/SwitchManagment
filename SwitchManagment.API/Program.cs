@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.AutoMapper;
 using SwitchManagment.API.Db;
@@ -32,8 +33,11 @@ namespace SwitchManagment.API
             builder.Services.AddAutoMapper(ca => ca.AddProfile<AutoMapperProfile>());
             builder.Services.AddTransient<ISwitchService, SwitchServiceHPComware5>();
             builder.Services.AddDataProtection(opts => opts.ApplicationDiscriminator = "SwitchManagmentApi");
+
+            builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+                .AddNegotiate();
             #endregion
-            
+
             #region UseMiddleware
             var app = builder.Build();
             
@@ -48,6 +52,8 @@ namespace SwitchManagment.API
 
             app.UseStatusCodePages();
             app.UseExceptionHandler();
+
+            app.UseAuthorization();
 
             //app.UseDeveloperExceptionPage();
             /*

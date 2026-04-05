@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -6,9 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.Db;
 using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Db.Entities.ACL.AccessMasks;
-using SwitchManagment.API.Db.Entities.ACL.ACEs;
 using SwitchManagment.API.Extensions;
-using SwitchManagment.API.Models.Dto.Switch;
 using SwitchManagment.API.Models.Dto.Switch.Port;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Request.Get;
@@ -17,17 +16,15 @@ using SwitchManagment.API.Models.Dto.Switch.Response.Admin;
 using SwitchManagment.API.Models.Dto.Switch.Response.Get;
 using SwitchManagment.API.Models.Dto.Switch.Response.Port;
 using SwitchManagment.API.SwitchService.Data;
-using SwitchManagment.API.SwitchService.Exceptions;
 using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace SwitchManagment.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     [ApiController]
@@ -278,7 +275,26 @@ namespace SwitchManagment.API.Controllers
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, [Range(1, int.MaxValue)][FromRoute] int portId, ConfigurePortAccessRequest portSetting)
         {
+            string[] groupsSid = User.Claims
+                .Where(claim => claim.Type == ClaimTypes.GroupSid)
+                .Select(claim => claim.Value)
+                .ToArray();
 
+            var ACEVlanOnInterfaces = await _context.ACEVlanOnInterfaces
+                .Include(aceVlOnIf => aceVlOnIf.Interface)
+                .ThenInclude(@if => @if.Switch)
+                .FirstOrDefaultAsync(ace => ace.Vlan == portSetting.Vlan && ace.IdOnSwitch == portId && ace.SwitchId == id && ace.AccessMask.HasFlag(AccessMaskVlanOnInterface.WriteAccess) && groupsSid.Contains(ace.GroupSID));
+
+            if(ACEVlanOnInterfaces is not null)
+            {
+                await _switchService.ConfigurePort(GetPortConfigAccess(ACEVlanOnInterfaces.Interface.Switch, ACEVlanOnInterfaces.Interface, portSetting));
+
+                return NoContent();
+            }
+
+            return Problem(detail: "No access on write for this vlan.", statusCode: StatusCodes.Status403Forbidden);
+
+            /*
             SwitchEntity switchEntity = await GetSwitchWithIntfAndACL(id);
 
             //if (await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
@@ -295,16 +311,6 @@ namespace SwitchManagment.API.Controllers
                     {
                         await _switchService.ConfigurePort(GetPortConfigAccess(switchEntity, interfaceEntity, portSetting));
 
-                        /*
-                        try
-                        {
-                            await _switchService.ConfigurePort(portConfigAccess);
-                        }
-                        catch (SwitchServiceException e) when (e.ErrorType == SwitchServiceErrorType.WrongInterface)
-                        {
-                            return Problem(detail: "Interface with this name not exist.", statusCode: StatusCodes.Status404NotFound);
-                        }
-                        */
                         return NoContent();
                     }
 
@@ -315,6 +321,18 @@ namespace SwitchManagment.API.Controllers
             }
 
             return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+            */
+
+            /*
+                        try
+                        {
+                            await _switchService.ConfigurePort(portConfigAccess);
+                        }
+                        catch (SwitchServiceException e) when (e.ErrorType == SwitchServiceErrorType.WrongInterface)
+                        {
+                            return Problem(detail: "Interface with this name not exist.", statusCode: StatusCodes.Status404NotFound);
+                        }
+                        */
         }
 
 
