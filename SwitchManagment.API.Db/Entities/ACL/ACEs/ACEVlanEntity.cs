@@ -6,6 +6,8 @@ namespace SwitchManagment.API.Db.Entities.ACL.ACEs
     {
         public int SwitchId { get; set; }
 
+        public SwitchEntity Switch { get; set; }
+
         public int Vlan {  get; set; }
     }
 }

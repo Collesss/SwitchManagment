@@ -18,7 +18,7 @@ namespace SwitchManagment.API.Db.ConfigurationsModels.ACEs
                 .IsUnique();
 
             builder
-                .HasOne<InterfaceEntity>()
+                .HasOne(aceVlOnSw => aceVlOnSw.Interface)
                 .WithMany(i => i.ACLVlans)
                 .HasForeignKey(aceVlOnSw => new { aceVlOnSw.SwitchId, aceVlOnSw.IdOnSwitch })
                 .HasPrincipalKey(i => new { i.SwitchId, i.IdOnSwitch })

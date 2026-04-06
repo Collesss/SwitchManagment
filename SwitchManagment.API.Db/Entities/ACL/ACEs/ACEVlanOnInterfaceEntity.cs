@@ -8,6 +8,8 @@ namespace SwitchManagment.API.Db.Entities.ACL.ACEs
 
         public int IdOnSwitch {  get; set; }
 
+        public InterfaceEntity Interface {  get; set; }
+
         public int Vlan {  get; set; }
     }
 }

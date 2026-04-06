@@ -362,3 +362,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 config.json
+
+App.db
+App.db-shm
+App.db-wal

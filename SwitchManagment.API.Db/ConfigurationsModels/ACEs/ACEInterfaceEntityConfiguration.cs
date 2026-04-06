@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Db.Entities.ACL.ACEs;
 
 namespace SwitchManagment.API.Db.ConfigurationsModels.ACEs
@@ -18,7 +17,7 @@ namespace SwitchManagment.API.Db.ConfigurationsModels.ACEs
                 .IsUnique();
 
             builder
-                .HasOne<InterfaceEntity>()
+                .HasOne(aceI => aceI.Interface)
                 .WithMany(i => i.ACLInterface)
                 .HasForeignKey(aceI => new { aceI.SwitchId, aceI.IdOnSwitch })
                 .HasPrincipalKey(i => new { i.SwitchId, i.IdOnSwitch })

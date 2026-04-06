@@ -19,7 +19,7 @@ namespace SwitchManagment.API.Db.ConfigurationsModels
             builder.HasAlternateKey(i => new { i.SwitchId , i.IdOnSwitch });
 
             builder
-                .HasOne<SwitchEntity>()
+                .HasOne(i => i.Switch)
                 .WithMany(sw => sw.Interfaces)
                 .HasForeignKey(i => i.SwitchId)
                 .HasPrincipalKey(sw => sw.Id)

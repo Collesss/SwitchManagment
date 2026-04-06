@@ -18,7 +18,7 @@ namespace SwitchManagment.API.Db.ConfigurationsModels.ACL
                 .IsUnique();
 
             builder
-                .HasOne<SwitchEntity>()
+                .HasOne(aceSw => aceSw.Switch)
                 .WithMany(sw => sw.ACLSwitch)
                 .HasForeignKey(aceSw => aceSw.SwitchId)
                 .HasPrincipalKey(sw => sw.Id)

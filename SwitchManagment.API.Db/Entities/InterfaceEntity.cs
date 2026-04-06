@@ -10,6 +10,8 @@ namespace SwitchManagment.API.Db.Entities
 
         public int SwitchId { get; set; }
 
+        public SwitchEntity Switch { get; set; }
+
         public int IdOnSwitch { get; set; }
         
         public IEnumerable<ACEInterfaceEntity> ACLInterface { get; set; }
