@@ -16,11 +16,11 @@ namespace SwitchManagment.API.Db
         #region ACL
         public DbSet<ACESwitchEntity> ACLSwitches { get; set; }
 
-        public DbSet<ACEInterfaceEntity> ACEInterfaces { get; set; }
+        public DbSet<ACEInterfaceEntity> ACLInterfaces { get; set; }
 
-        public DbSet<ACEVlanEntity> ACEVlans { get; set; }
+        public DbSet<ACEVlanEntity> ACLVlans { get; set; }
 
-        public DbSet<ACEVlanOnInterfaceEntity> ACEVlanOnInterfaces { get; set; }
+        public DbSet<ACEVlanOnInterfaceEntity> ACLVlanOnInterfaces { get; set; }
         #endregion
 
         //public DbSet<CredentialEntity> Credentials { get; set; }

@@ -43,7 +43,7 @@ namespace SwitchManagment.API.Controllers
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _switchService = switchService ?? throw new ArgumentNullException(nameof(switchService));
-            _dataProtector = dataProtectorProvider.CreateProtector("SwitchController") ?? throw new ArgumentNullException(nameof(dataProtectorProvider));
+            _dataProtector = dataProtectorProvider?.CreateProtector("SwitchController") ?? throw new ArgumentNullException(nameof(dataProtectorProvider));
         }
 
         // GET: api/Switch
@@ -52,11 +52,17 @@ namespace SwitchManagment.API.Controllers
             Ok(_mapper.Map<IEnumerable<SwitchResponse>>(await _context.Switches.ToListAsync()));
 
 
-        private async Task<(GetResponse getResponse, IEnumerable<SwitchEntity>)> GetSwitchesBase(GetRequest switchGet)
+        private async Task<(GetResponse getResponse, IEnumerable<SwitchEntity>)> GetSwitchesBase(GetRequest switchGet, bool admin = false)
         {
             GetResponse getResponse = _mapper.Map<GetResponse>(switchGet);
 
-            var filter = _context.Switches.Like(switchGet.Filters);
+            string[] userGroupSIDs = GetUserGroupSIDs();
+
+            var filter = (admin ? _context.Switches : _context.Switches
+                .Where(sw => sw.ACLSwitch.Any(aceSw => userGroupSIDs.Contains(aceSw.GroupSID) && aceSw.AccessMask.HasFlag(AccessMaskSwitch.ViewCommon))))
+                .Like(switchGet.Filters);
+
+            //var filter = _context.Switches.Like(switchGet.Filters);
 
             int count = await filter.CountAsync();
 
@@ -85,7 +91,7 @@ namespace SwitchManagment.API.Controllers
         [HttpGet("admin/getswitches")]
         public async Task<ActionResult<AdminSwitchGetResponse>> AdminGetSwitches([FromQuery] GetRequest switchGet)
         {
-            (GetResponse getResponse, IEnumerable<SwitchEntity> switches) = await GetSwitchesBase(switchGet);
+            (GetResponse getResponse, IEnumerable<SwitchEntity> switches) = await GetSwitchesBase(switchGet, true);
 
             return Ok(new AdminSwitchGetResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<AdminSwitchResponse>>(switches) });
         }
@@ -164,7 +170,7 @@ namespace SwitchManagment.API.Controllers
             {
                 var switchInfo = await _switchService.GetSwitchInfo(GetConnectConfig(switchEntity));
 
-                return AdminGetSwitchWithPortsResponse(switchEntity, null);
+                return AdminGetSwitchWithPortsResponse(switchEntity, switchInfo);
             }
 
             return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
@@ -250,105 +256,16 @@ namespace SwitchManagment.API.Controllers
             }
         }
 
-        private async Task<SwitchEntity> GetSwitchWithIntfAndACL(int id) =>
-            await _context.Switches
-                .Include(sw => sw.Interfaces)
-                .ThenInclude(i => i.ACLVlans)
-                .FirstOrDefaultAsync(sw => sw.Id == id);
-
-        private PortConfigAccess GetPortConfigAccess(SwitchEntity switchEntity, InterfaceEntity interfaceEntity, ConfigurePortAccessRequest portSetting)
-        {
-            PortConfigAccess portConfigAccess = _mapper.Map<PortConfigAccess>(switchEntity);
-            portConfigAccess.Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword);
-            portConfigAccess.SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword);
-            
-            _mapper.Map(interfaceEntity, portConfigAccess);
-            _mapper.Map(portSetting, portConfigAccess);
-
-            return portConfigAccess;
-        }
-
-        [HttpPut("{id}/port/{portId}/access")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, [Range(1, int.MaxValue)][FromRoute] int portId, ConfigurePortAccessRequest portSetting)
-        {
-            string[] groupsSid = User.Claims
-                .Where(claim => claim.Type == ClaimTypes.GroupSid)
-                .Select(claim => claim.Value)
-                .ToArray();
-
-            var ACEVlanOnInterfaces = await _context.ACEVlanOnInterfaces
-                .Include(aceVlOnIf => aceVlOnIf.Interface)
-                .ThenInclude(@if => @if.Switch)
-                .FirstOrDefaultAsync(ace => ace.Vlan == portSetting.Vlan && ace.IdOnSwitch == portId && ace.SwitchId == id && ace.AccessMask.HasFlag(AccessMaskVlanOnInterface.WriteAccess) && groupsSid.Contains(ace.GroupSID));
-
-            if(ACEVlanOnInterfaces is not null)
-            {
-                await _switchService.ConfigurePort(GetPortConfigAccess(ACEVlanOnInterfaces.Interface.Switch, ACEVlanOnInterfaces.Interface, portSetting));
-
-                return NoContent();
-            }
-
-            return Problem(detail: "No access on write for this vlan.", statusCode: StatusCodes.Status403Forbidden);
-
-            /*
-            SwitchEntity switchEntity = await GetSwitchWithIntfAndACL(id);
-
-            //if (await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
-            if (switchEntity is not null)
-            {
-                InterfaceEntity interfaceEntity = switchEntity.Interfaces.FirstOrDefault(i => i.IdOnSwitch == portId);
-
-                if(interfaceEntity is not null)
-                {
-                    ACEVlanOnInterfaceEntity aceVlanOnInterfaceEntity = interfaceEntity.ACLVlans.FirstOrDefault(aclVl => 
-                        aclVl.Vlan == portSetting.Vlan && aclVl.AccessMask.HasFlag(AccessMaskVlanOnInterface.WriteAccess) && User.HasClaim(ClaimTypes.GroupSid, aclVl.GroupSID));
-
-                    if(aceVlanOnInterfaceEntity is not null)
-                    {
-                        await _switchService.ConfigurePort(GetPortConfigAccess(switchEntity, interfaceEntity, portSetting));
-
-                        return NoContent();
-                    }
-
-                    return Problem(detail: "No access on write for this vlan.", statusCode: StatusCodes.Status403Forbidden);
-                }
-
-                return Problem(detail: "Interface with this 'portId' not exist.", statusCode: StatusCodes.Status404NotFound);
-            }
-
-            return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
-            */
-
-            /*
-                        try
-                        {
-                            await _switchService.ConfigurePort(portConfigAccess);
-                        }
-                        catch (SwitchServiceException e) when (e.ErrorType == SwitchServiceErrorType.WrongInterface)
-                        {
-                            return Problem(detail: "Interface with this name not exist.", statusCode: StatusCodes.Status404NotFound);
-                        }
-                        */
-        }
-
-
-
-
-        [HttpPut("{id}/port/{portId}/trunk")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, [Range(1, int.MaxValue)][FromRoute] int portId, ConfigurePortTrunkRequest portSetting)
-        {
-
-            throw new Exception("Test Exception");
-        }
+        
 
         private async Task<bool> SwitchEntityExists(int id) =>
             await _context.Switches.AnyAsync(e => e.Id == id);
+
+
+        private string[] GetUserGroupSIDs() =>
+            User.Claims
+                .Where(claim => claim.Type == ClaimTypes.GroupSid)
+                .Select(claim => claim.Value)
+                .ToArray();
     }
 }
