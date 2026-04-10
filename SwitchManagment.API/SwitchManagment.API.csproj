@@ -31,7 +31,6 @@
     <Folder Include="Models\Dto\ACL\Response\" />
     <Folder Include="Models\Dto\Common\Request\" />
     <Folder Include="Models\Dto\Common\Response\" />
-    <Folder Include="Models\Dto\Interface\" />
   </ItemGroup>
 
 </Project>

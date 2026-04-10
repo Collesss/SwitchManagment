@@ -46,7 +46,7 @@ namespace SwitchManagment.API.Controllers
             _dataProtector = dataProtectorProvider?.CreateProtector("SwitchController") ?? throw new ArgumentNullException(nameof(dataProtectorProvider));
         }
 
-        // GET: api/Switch
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SwitchResponse>>> GetSwitches() =>
             Ok(_mapper.Map<IEnumerable<SwitchResponse>>(await _context.Switches.ToListAsync()));
