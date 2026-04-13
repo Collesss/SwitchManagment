@@ -8,7 +8,6 @@ using SwitchManagment.API.Db;
 using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Db.Entities.ACL.AccessMasks;
 using SwitchManagment.API.Extensions;
-using SwitchManagment.API.Models.Dto.Switch.Port;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Request.Get;
 using SwitchManagment.API.Models.Dto.Switch.Response;
@@ -130,7 +129,7 @@ namespace SwitchManagment.API.Controllers
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType<SwitchWithPortsResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<SwitchWithPortsResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute]int id)
@@ -161,7 +160,7 @@ namespace SwitchManagment.API.Controllers
         }
 
         [HttpGet("admin/{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType<AdminSwitchWithPortsResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<AdminSwitchWithPortsResponse>> AdminGetSwitch([Range(1, int.MaxValue)][FromRoute] int id)
@@ -212,7 +211,7 @@ namespace SwitchManagment.API.Controllers
         */
 
         [HttpPost("admin")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType<int>(StatusCodes.Status201Created)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
         public async Task<ActionResult<int>> AdminAddSwitch([FromBody]AdminSwitchCreateRequest switchCreateRequest)

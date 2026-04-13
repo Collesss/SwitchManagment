@@ -1,15 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Build.Framework;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.Db;
 using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Models.Dto.Interface.Request;
 using SwitchManagment.API.Models.Dto.Interface.Response;
-using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -37,14 +33,14 @@ namespace SwitchManagment.API.Controllers
 
         // GET: api/<InterfaceController>
         [HttpGet]
-        public IEnumerable<string> GetInterface()
+        public IEnumerable<string> GetInterfaces()
         {
             return new string[] { "value1", "value2" };
         }
 
         // GET api/<InterfaceController>/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<InterfaceResponse>> Get([Range(1, int.MaxValue)][FromRoute] int id)
+        public async Task<ActionResult<InterfaceResponse>> GetInterface([Range(1, int.MaxValue)][FromRoute] int id)
         {
             if (await _context.Interfaces.FindAsync(id) is InterfaceEntity interfaceEntity)
                 return Ok(_mapper.Map<InterfaceResponse>(interfaceEntity));
