@@ -6,8 +6,10 @@ namespace SwitchManagment.API.Db.Entities.ACL.ACEs
     {
         public int SwitchId { get; set; }
 
-        public int IdOnSwitch {  get; set; }
+        public SwitchEntity Switch { get; set; }
 
-        public InterfaceEntity Interface {  get; set; }
+        public string InterfaceName {  get; set; }
+
+        //public InterfaceEntity Interface {  get; set; }
     }
 }

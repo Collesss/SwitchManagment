@@ -34,23 +34,22 @@ namespace SwitchManagment.API.Controllers
             _dataProtector = dataProtectorProvider?.CreateProtector("SwitchController") ?? throw new ArgumentNullException(nameof(dataProtectorProvider));
         }
 
-        [HttpPut("{id}/port/{portId}/access")]
+        [HttpPut("{id}/port/access")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, [Range(1, int.MaxValue)][FromRoute] int portId, ConfigurePortAccessRequest portSetting)
+        public async Task<ActionResult> ConfigurePortAccess([Range(1, int.MaxValue)][FromRoute] int id, ConfigurePortAccessRequest portSetting)
         {
             string[] groupsSid = GetUserGroupSIDs();
 
             var ACEVlanOnInterfaces = await _context.ACLVlanOnInterfaces
-                .Include(aceVlOnIf => aceVlOnIf.Interface)
-                .ThenInclude(@if => @if.Switch)
-                .FirstOrDefaultAsync(ace => ace.Vlan == portSetting.Vlan && ace.IdOnSwitch == portId && ace.SwitchId == id && ace.AccessMask.HasFlag(AccessMaskVlanOnInterface.WriteAccess) && groupsSid.Contains(ace.GroupSID));
+                .Include(aceVlOnIf => aceVlOnIf.Switch)
+                .FirstOrDefaultAsync(ace => ace.Vlan == portSetting.Vlan && ace.InterfaceName == portSetting.InterfaceName && ace.SwitchId == id && ace.AccessMask.HasFlag(AccessMaskVlanOnInterface.WriteAccess) && groupsSid.Contains(ace.GroupSID));
 
             if (ACEVlanOnInterfaces is not null)
             {
-                await _switchService.ConfigurePort(GetPortConfigAccess(ACEVlanOnInterfaces.Interface.Switch, ACEVlanOnInterfaces.Interface, portSetting));
+                await _switchService.ConfigurePort(GetPortConfigAccess(ACEVlanOnInterfaces.Switch, , portSetting));
 
                 return NoContent();
             }
@@ -59,7 +58,7 @@ namespace SwitchManagment.API.Controllers
         }
 
 
-        [HttpPut("{id}/port/{portId}/trunk")]
+        [HttpPut("{id}/port/trunk")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -70,13 +69,12 @@ namespace SwitchManagment.API.Controllers
         }
 
 
-        private PortConfigAccess GetPortConfigAccess(SwitchEntity switchEntity, InterfaceEntity interfaceEntity, ConfigurePortAccessRequest portSetting)
+        private PortConfigAccess GetPortConfigAccess(SwitchEntity switchEntity, ConfigurePortAccessRequest portSetting)
         {
             PortConfigAccess portConfigAccess = _mapper.Map<PortConfigAccess>(switchEntity);
             portConfigAccess.Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword);
             portConfigAccess.SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword);
 
-            _mapper.Map(interfaceEntity, portConfigAccess);
             _mapper.Map(portSetting, portConfigAccess);
 
             return portConfigAccess;

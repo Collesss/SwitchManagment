@@ -9,7 +9,7 @@ using SwitchManagment.API.Models.Dto.Interface.Response;
 using System.ComponentModel.DataAnnotations;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
+/*
 namespace SwitchManagment.API.Controllers
 {
     [Authorize]
@@ -67,12 +67,12 @@ namespace SwitchManagment.API.Controllers
         }
 
 
-        /*
+        
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
         }
-        */
+        
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
@@ -91,3 +91,4 @@ namespace SwitchManagment.API.Controllers
         }
     }
 }
+*/

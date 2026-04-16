@@ -2,6 +2,7 @@
 
 namespace SwitchManagment.API.Db.Entities
 {
+    /*
     public class InterfaceEntity
     {
         public int Id { get; set; }
@@ -18,4 +19,5 @@ namespace SwitchManagment.API.Db.Entities
 
         public IEnumerable<ACEVlanOnInterfaceEntity> ACLVlans { get; set; }
     }
+    */
 }

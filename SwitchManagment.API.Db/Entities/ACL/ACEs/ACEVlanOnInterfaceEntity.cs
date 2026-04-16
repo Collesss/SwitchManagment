@@ -5,10 +5,14 @@ namespace SwitchManagment.API.Db.Entities.ACL.ACEs
     public class ACEVlanOnInterfaceEntity : ACEBase<AccessMaskVlanOnInterface>
     {
         public int SwitchId { get; set; }
+        
+        public SwitchEntity Switch { get; set; }
 
-        public int IdOnSwitch {  get; set; }
+        public string InterfaceName { get; set; }
 
-        public InterfaceEntity Interface {  get; set; }
+        //public int IdOnSwitch {  get; set; }
+
+        //public InterfaceEntity Interface {  get; set; }
 
         public int Vlan {  get; set; }
     }

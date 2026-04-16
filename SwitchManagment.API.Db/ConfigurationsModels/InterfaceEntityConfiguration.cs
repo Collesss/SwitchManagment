@@ -4,6 +4,7 @@ using SwitchManagment.API.Db.Entities;
 
 namespace SwitchManagment.API.Db.ConfigurationsModels
 {
+    /*
     public class InterfaceEntityConfiguration : IEntityTypeConfiguration<InterfaceEntity>
     {
         public void Configure(EntityTypeBuilder<InterfaceEntity> builder)
@@ -26,4 +27,5 @@ namespace SwitchManagment.API.Db.ConfigurationsModels
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
+    */
 }

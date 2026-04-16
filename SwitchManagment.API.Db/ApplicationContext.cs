@@ -11,7 +11,7 @@ namespace SwitchManagment.API.Db
     {
         public DbSet<SwitchEntity> Switches { get; set; }
 
-        public DbSet<InterfaceEntity> Interfaces { get; set; }
+        //public DbSet<InterfaceEntity> Interfaces { get; set; }
 
         #region ACL
         public DbSet<ACESwitchEntity> ACLSwitches { get; set; }
@@ -55,7 +55,7 @@ namespace SwitchManagment.API.Db
             //modelBuilder.Entity<SwitchEntity>().HasData(initSwitches);
 
             modelBuilder.ApplyConfiguration(new SwitchEntityConfiguration());
-            modelBuilder.ApplyConfiguration(new InterfaceEntityConfiguration());
+            //modelBuilder.ApplyConfiguration(new InterfaceEntityConfiguration());
 
             #region ACL
             modelBuilder.ApplyConfiguration(new ACESwitchEntityConfiguration());

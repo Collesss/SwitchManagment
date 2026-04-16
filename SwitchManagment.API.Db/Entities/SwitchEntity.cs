@@ -10,8 +10,6 @@ namespace SwitchManagment.API.Db.Entities
 
         public string Location { get; set; }
 
-        public string Description { get; set; }
-
 
         public string Login { get; set; }
 
@@ -20,10 +18,14 @@ namespace SwitchManagment.API.Db.Entities
         public string EncryptedSuperPassword { get; set; }
         
 
-        public IEnumerable<InterfaceEntity> Interfaces { get; set; }
+        //public IEnumerable<InterfaceEntity> Interfaces { get; set; }
         
         public IEnumerable<ACESwitchEntity> ACLSwitch { get; set; }
         
         public IEnumerable<ACEVlanEntity> ACLVlans { get; set; }
+        
+        public IEnumerable<ACEInterfaceEntity> ACLInterface { get; set; }
+
+        public IEnumerable<ACEVlanOnInterfaceEntity> ACLVlanOnInterface { get; set; }
     }
 }

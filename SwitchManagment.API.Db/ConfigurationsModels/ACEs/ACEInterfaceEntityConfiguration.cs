@@ -13,15 +13,26 @@ namespace SwitchManagment.API.Db.ConfigurationsModels.ACEs
             builder.Property(aceI => aceI.GroupSID)
                 .IsRequired();
 
-            builder.HasIndex(aceI => new { aceI.GroupSID, aceI.SwitchId, aceI.IdOnSwitch })
-                .IsUnique();
+            builder.HasIndex(aceI => new { aceI.GroupSID, aceI.SwitchId, aceI.InterfaceName }).IsUnique();
 
+            //builder.HasIndex(aceI => new { aceI.GroupSID, aceI.SwitchId, aceI.IdOnSwitch }).IsUnique();
+
+
+            builder
+                .HasOne(aceI => aceI.Switch)
+                .WithMany(sw => sw.ACLInterface)
+                .HasForeignKey(aceI => aceI.SwitchId)
+                .HasPrincipalKey(sw => sw.Id)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            /*
             builder
                 .HasOne(aceI => aceI.Interface)
                 .WithMany(i => i.ACLInterface)
                 .HasForeignKey(aceI => new { aceI.SwitchId, aceI.IdOnSwitch })
                 .HasPrincipalKey(i => new { i.SwitchId, i.IdOnSwitch })
                 .OnDelete(DeleteBehavior.Cascade);
+            */
         }
     }
 }
