@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 //using SwitchManagment.API.Repository.Entities;
 using SwitchManagment.API.Db.Entities;
-using SwitchManagment.API.Models.Dto.Switch.Port;
+using SwitchManagment.API.Models.Dto.Port;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Request.Get;
 using SwitchManagment.API.Models.Dto.Switch.Response;

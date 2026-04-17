@@ -4,6 +4,7 @@
     public enum AccessMaskVlan : byte
     {
         None = 0,
-        Read = 1,
+        List = 1,
+        Read = 2,
     }
 }

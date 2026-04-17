@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using SwitchManagment.API.Db;
 using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Db.Entities.ACL.AccessMasks;
-using SwitchManagment.API.Models.Dto.Switch.Port;
+using SwitchManagment.API.Models.Dto.ACL.AccessMask;
+using SwitchManagment.API.Models.Dto.Port;
 using SwitchManagment.API.SwitchService.Data;
 using SwitchManagment.API.SwitchService.Interfaces;
 using System.ComponentModel.DataAnnotations;
@@ -49,7 +50,7 @@ namespace SwitchManagment.API.Controllers
 
             if (ACEVlanOnInterfaces is not null)
             {
-                await _switchService.ConfigurePort(GetPortConfigAccess(ACEVlanOnInterfaces.Switch, , portSetting));
+                await _switchService.ConfigurePort(GetPortConfigAccess(ACEVlanOnInterfaces.Switch, portSetting));
 
                 return NoContent();
             }
@@ -62,10 +63,27 @@ namespace SwitchManagment.API.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, [Range(1, int.MaxValue)][FromRoute] int portId, ConfigurePortTrunkRequest portSetting)
+        public async Task<ActionResult> ConfigurePortTrunk([Range(1, int.MaxValue)][FromRoute] int id, [Range(1, int.MaxValue)][FromRoute] int portId, ConfigurePortTrunkRequest portSetting)
         {
+            string[] groupsSid = GetUserGroupSIDs();
 
-            throw new Exception("Test Exception");
+            var ACEVlanOnInterfaces = await _context.ACLVlanOnInterfaces
+                .Include(aceVlOnIf => aceVlOnIf.Switch)
+                .Where(ace => portSetting.Vlans.Contains(ace.Vlan) && ace.InterfaceName == portSetting.InterfaceName && ace.SwitchId == id && ace.AccessMask.HasFlag(AccessMaskVlanOnInterface.WriteTrunk) && groupsSid.Contains(ace.GroupSID))
+                .GroupBy(ace => ace.Vlan)
+                .Select(groupAce => groupAce.First())
+                .ToListAsync();
+
+
+            if (portSetting.Vlans.All(vlan => ACEVlanOnInterfaces.Any(ace => ace.Vlan == vlan)))
+            {
+                await _switchService.ConfigurePort(GetPortConfigTrunk(ACEVlanOnInterfaces.First().Switch, portSetting));
+
+                return NoContent();
+            }
+
+            return Problem(detail: "There is no write access to at least one VLAN in the list.", statusCode: StatusCodes.Status403Forbidden);
+
         }
 
 
@@ -80,6 +98,36 @@ namespace SwitchManagment.API.Controllers
             return portConfigAccess;
         }
 
+        private PortConfigTrunk GetPortConfigTrunk(SwitchEntity switchEntity, ConfigurePortTrunkRequest portSetting)
+        {
+            PortConfigTrunk portConfigTrunk = _mapper.Map<PortConfigTrunk>(switchEntity);
+            portConfigTrunk.Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword);
+            portConfigTrunk.SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword);
+
+            _mapper.Map(portSetting, portConfigTrunk);
+
+            return portConfigTrunk;
+        }
+
+        /*
+        private PortConfigAccess GetPortConfig(SwitchEntity switchEntity, ConfigurePortAccessRequest portSetting) =>
+            GetPortConfig<PortConfigAccess, ConfigurePortAccessRequest>(switchEntity, portSetting);
+
+        private PortConfigTrunk GetPortConfig(SwitchEntity switchEntity, ConfigurePortTrunkRequest portSetting) =>
+            GetPortConfig<PortConfigTrunk, ConfigurePortTrunkRequest>(switchEntity, portSetting);
+
+        private T GetPortConfig<T, V>(SwitchEntity switchEntity, V portSetting) where T : PortConfig where V : class
+        {
+            T portConfig = _mapper.Map<T>(switchEntity);
+            portConfig.Password = _dataProtector.Unprotect(switchEntity.EncryptedPassword);
+            portConfig.SuperPassword = _dataProtector.Unprotect(switchEntity.EncryptedSuperPassword);
+
+            _mapper.Map(portSetting, portConfig);
+
+            return portConfig;
+        }
+        */
+
         private string[] GetUserGroupSIDs() =>
             User.Claims
                 .Where(claim => claim.Type == ClaimTypes.GroupSid)
@@ -87,55 +135,3 @@ namespace SwitchManagment.API.Controllers
                 .ToArray();
     }
 }
-
-
-/*
-private async Task<SwitchEntity> GetSwitchWithIntfAndACL(int id) =>
-            await _context.Switches
-                .Include(sw => sw.Interfaces)
-                .ThenInclude(i => i.ACLVlans)
-                .FirstOrDefaultAsync(sw => sw.Id == id);
-
-
-             
-*/
-
-/*
-            SwitchEntity switchEntity = await GetSwitchWithIntfAndACL(id);
-
-            //if (await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
-            if (switchEntity is not null)
-            {
-                InterfaceEntity interfaceEntity = switchEntity.Interfaces.FirstOrDefault(i => i.IdOnSwitch == portId);
-
-                if(interfaceEntity is not null)
-                {
-                    ACEVlanOnInterfaceEntity aceVlanOnInterfaceEntity = interfaceEntity.ACLVlans.FirstOrDefault(aclVl => 
-                        aclVl.Vlan == portSetting.Vlan && aclVl.AccessMask.HasFlag(AccessMaskVlanOnInterface.WriteAccess) && User.HasClaim(ClaimTypes.GroupSid, aclVl.GroupSID));
-
-                    if(aceVlanOnInterfaceEntity is not null)
-                    {
-                        await _switchService.ConfigurePort(GetPortConfigAccess(switchEntity, interfaceEntity, portSetting));
-
-                        return NoContent();
-                    }
-
-                    return Problem(detail: "No access on write for this vlan.", statusCode: StatusCodes.Status403Forbidden);
-                }
-
-                return Problem(detail: "Interface with this 'portId' not exist.", statusCode: StatusCodes.Status404NotFound);
-            }
-
-            return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
-            */
-
-/*
-            try
-            {
-                await _switchService.ConfigurePort(portConfigAccess);
-            }
-            catch (SwitchServiceException e) when (e.ErrorType == SwitchServiceErrorType.WrongInterface)
-            {
-                return Problem(detail: "Interface with this name not exist.", statusCode: StatusCodes.Status404NotFound);
-            }
-            */

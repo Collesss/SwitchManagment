@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SwitchManagment.API.Models.Dto.Switch.Port
+namespace SwitchManagment.API.Models.Dto.Port
 {
     public class ConfigurePortAccessRequest
     {

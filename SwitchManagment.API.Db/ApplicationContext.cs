@@ -11,8 +11,6 @@ namespace SwitchManagment.API.Db
     {
         public DbSet<SwitchEntity> Switches { get; set; }
 
-        //public DbSet<InterfaceEntity> Interfaces { get; set; }
-
         #region ACL
         public DbSet<ACESwitchEntity> ACLSwitches { get; set; }
 
@@ -23,7 +21,6 @@ namespace SwitchManagment.API.Db
         public DbSet<ACEVlanOnInterfaceEntity> ACLVlanOnInterfaces { get; set; }
         #endregion
 
-        //public DbSet<CredentialEntity> Credentials { get; set; }
 
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
         {
@@ -39,23 +36,7 @@ namespace SwitchManagment.API.Db
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            /*
-            IEnumerable<SwitchEntity> initSwitches = Enumerable.Range(1, 5)
-                .Select(i => new SwitchEntity() 
-                { 
-                    Id = i, 
-                    IpOrName = $"192.168.0.{i}", 
-                    Location = $"Loc{i}", 
-                    Description = $"Desc{i}", 
-                    Login = $"Admin{i}", 
-                    EncryptedPassword = $"EP{i}", 
-                    EncryptedSuperPassword = $"ESP{i}" 
-                });
-            */
-            //modelBuilder.Entity<SwitchEntity>().HasData(initSwitches);
-
             modelBuilder.ApplyConfiguration(new SwitchEntityConfiguration());
-            //modelBuilder.ApplyConfiguration(new InterfaceEntityConfiguration());
 
             #region ACL
             modelBuilder.ApplyConfiguration(new ACESwitchEntityConfiguration());

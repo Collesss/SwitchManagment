@@ -8,6 +8,7 @@ using SwitchManagment.API.Db;
 using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Db.Entities.ACL.AccessMasks;
 using SwitchManagment.API.Extensions;
+using SwitchManagment.API.Models.Dto.ACL.AccessMask;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Request.Get;
 using SwitchManagment.API.Models.Dto.Switch.Response;
@@ -29,14 +30,14 @@ namespace SwitchManagment.API.Controllers
     [ApiController]
     public class SwitchController : ControllerBase
     {
-        private readonly ILogger<SwitchTestController> _logger;
+        private readonly ILogger<SwitchController> _logger;
         private readonly IMapper _mapper;
         private readonly ApplicationContext _context;
         private readonly ISwitchService _switchService;
         private readonly IDataProtector _dataProtector;
 
 
-        public SwitchController(ILogger<SwitchTestController> logger, IMapper mapper, ApplicationContext context, ISwitchService switchService, IDataProtectionProvider dataProtectorProvider)
+        public SwitchController(ILogger<SwitchController> logger, IMapper mapper, ApplicationContext context, ISwitchService switchService, IDataProtectionProvider dataProtectorProvider)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
