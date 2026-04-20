@@ -5,10 +5,6 @@ VisualStudioVersion = 17.14.36811.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchManagment.API", "SwitchManagment.API\SwitchManagment.API.csproj", "{0CA57B6B-0074-466F-934A-7E09B2F7F5D9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchManagment.API.Repository", "SwitchManagment.API.Repository\SwitchManagment.API.Repository.csproj", "{80532FFB-FC79-440A-AA0B-B711C5611ACC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchManagment.API.Repository.SqlLite", "SwitchManagment.API.Repository.SqlLite\SwitchManagment.API.Repository.SqlLite.csproj", "{8D8AE3A1-7DFA-4A1C-BD38-5DD314BB6858}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchManagment.API.Db", "SwitchManagment.API.Db\SwitchManagment.API.Db.csproj", "{44D822A2-FFEB-4764-A06B-7D37072D91EE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchManagment.API.SwitchService", "SwitchManagment.API.SwitchService\SwitchManagment.API.SwitchService.csproj", "{9E901495-A0FE-4A12-805C-B47762640FC4}"
@@ -25,14 +21,6 @@ Global
 		{0CA57B6B-0074-466F-934A-7E09B2F7F5D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CA57B6B-0074-466F-934A-7E09B2F7F5D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0CA57B6B-0074-466F-934A-7E09B2F7F5D9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{80532FFB-FC79-440A-AA0B-B711C5611ACC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{80532FFB-FC79-440A-AA0B-B711C5611ACC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{80532FFB-FC79-440A-AA0B-B711C5611ACC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{80532FFB-FC79-440A-AA0B-B711C5611ACC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8D8AE3A1-7DFA-4A1C-BD38-5DD314BB6858}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8D8AE3A1-7DFA-4A1C-BD38-5DD314BB6858}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8D8AE3A1-7DFA-4A1C-BD38-5DD314BB6858}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8D8AE3A1-7DFA-4A1C-BD38-5DD314BB6858}.Release|Any CPU.Build.0 = Release|Any CPU
 		{44D822A2-FFEB-4764-A06B-7D37072D91EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{44D822A2-FFEB-4764-A06B-7D37072D91EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44D822A2-FFEB-4764-A06B-7D37072D91EE}.Release|Any CPU.ActiveCfg = Release|Any CPU

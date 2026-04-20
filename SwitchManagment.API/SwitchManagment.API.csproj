@@ -21,8 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SwitchManagment.API.Db\SwitchManagment.API.Db.csproj" />
-    <ProjectReference Include="..\SwitchManagment.API.Repository.SqlLite\SwitchManagment.API.Repository.SqlLite.csproj" />
-    <ProjectReference Include="..\SwitchManagment.API.Repository\SwitchManagment.API.Repository.csproj" />
     <ProjectReference Include="..\SwitchManagment.API.SwitchService\SwitchManagment.API.SwitchService.csproj" />
   </ItemGroup>
 
@@ -30,6 +28,7 @@
     <Folder Include="Models\Dto\ACL\Request\" />
     <Folder Include="Models\Dto\ACL\Response\" />
     <Folder Include="Models\Dto\Common\Response\" />
+    <Folder Include="Options\" />
   </ItemGroup>
 
 </Project>

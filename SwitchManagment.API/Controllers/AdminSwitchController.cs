@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,6 @@ using SwitchManagment.API.Db;
 using SwitchManagment.API.Db.Entities;
 using SwitchManagment.API.Db.Entities.ACL.AccessMasks;
 using SwitchManagment.API.Extensions;
-using SwitchManagment.API.Models.Dto.ACL.AccessMask;
 using SwitchManagment.API.Models.Dto.Switch.Request;
 using SwitchManagment.API.Models.Dto.Switch.Request.Get;
 using SwitchManagment.API.Models.Dto.Switch.Response;
@@ -25,19 +25,19 @@ using System.Text;
 namespace SwitchManagment.API.Controllers
 {
     [Authorize]
-    [Route("api/[controller]")]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     [ApiController]
-    public class SwitchController : ControllerBase
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
+    [Route("api/admin/switch")]
+    public class AdminSwitchController : ControllerBase
     {
-        private readonly ILogger<SwitchController> _logger;
+        private readonly ILogger<AdminSwitchController> _logger;
         private readonly IMapper _mapper;
         private readonly ApplicationContext _context;
         private readonly ISwitchService _switchService;
         private readonly IDataProtector _dataProtector;
 
 
-        public SwitchController(ILogger<SwitchController> logger, IMapper mapper, ApplicationContext context, ISwitchService switchService, IDataProtectionProvider dataProtectorProvider)
+        public AdminSwitchController(ILogger<AdminSwitchController> logger, IMapper mapper, ApplicationContext context, ISwitchService switchService, IDataProtectionProvider dataProtectorProvider)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -79,8 +79,16 @@ namespace SwitchManagment.API.Controllers
         }
 
 
-
         [HttpGet("getswitches")]
+        public async Task<ActionResult<SwitchGetResponse>> GetSwitches1([FromQuery] GetRequest switchGet)
+        {
+            (GetResponse getResponse, IEnumerable<SwitchEntity> switches) = await GetSwitchesBase(switchGet);
+
+            return Ok(new SwitchGetResponse { SwitchGetInfo = getResponse, Switches = _mapper.Map<IEnumerable<SwitchResponse>>(switches) });
+        }
+
+
+        [HttpGet("admin/getswitches")]
         public async Task<ActionResult<AdminSwitchGetResponse>> AdminGetSwitches([FromQuery] GetRequest switchGet)
         {
             (GetResponse getResponse, IEnumerable<SwitchEntity> switches) = await GetSwitchesBase(switchGet, true);
@@ -121,6 +129,21 @@ namespace SwitchManagment.API.Controllers
             return switchWithPortsResponse;
         }
 
+        [HttpGet("{id}")]
+        [ProducesResponseType<SwitchWithPortsResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<SwitchWithPortsResponse>> GetSwitch([Range(1, int.MaxValue)][FromRoute] int id)
+        {
+            if (await _context.Switches.FindAsync(id) is SwitchEntity switchEntity)
+            {
+                var switchInfo = await _switchService.GetSwitchInfo(GetConnectConfig(switchEntity));
+
+                return GetSwitchWithPortsResponse(switchEntity, switchInfo);
+            }
+
+            return Problem(detail: "Switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+        }
 
         private string GetHash(string str) =>
             Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(str)));
@@ -137,7 +160,7 @@ namespace SwitchManagment.API.Controllers
             return switchWithPortsResponse;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("admin/{id}")]
         [ProducesResponseType<AdminSwitchWithPortsResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -188,11 +211,11 @@ namespace SwitchManagment.API.Controllers
         }
         */
 
-        [HttpPost()]
+        [HttpPost("admin")]
         [ProducesResponseType<int>(StatusCodes.Status201Created)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<int>> AdminAddSwitch([FromBody]AdminSwitchCreateRequest switchCreateRequest)
+        public async Task<ActionResult<int>> AdminAddSwitch([FromBody] AdminSwitchCreateRequest switchCreateRequest)
         {
             try
             {
@@ -206,7 +229,7 @@ namespace SwitchManagment.API.Controllers
 
                 return CreatedAtAction("GetSwitch", new { id = addResult.Id }, addResult.Id);
             }
-            catch(DbUpdateException e) when(e.InnerException is SqliteException innerException && innerException.Message == "SQLite Error 19: 'UNIQUE constraint failed: Switches.IpOrName'.")
+            catch (DbUpdateException e) when (e.InnerException is SqliteException innerException && innerException.Message == "SQLite Error 19: 'UNIQUE constraint failed: Switches.IpOrName'.")
             {
                 //throw new HttpRequestException("Switch with this 'IpOrName' already exist.", e, System.Net.HttpStatusCode.Conflict);
                 return Problem(detail: "Switch with this 'IpOrName' already exist.", statusCode: StatusCodes.Status409Conflict);
@@ -214,11 +237,11 @@ namespace SwitchManagment.API.Controllers
         }
 
 
-        [HttpDelete("{id}")]
+        [HttpDelete("admin/{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AdminDeleteSwitch([Range(1, int.MaxValue)][FromRoute]int id)
+        public async Task<IActionResult> AdminDeleteSwitch([Range(1, int.MaxValue)][FromRoute] int id)
         {
             try
             {
@@ -233,7 +256,7 @@ namespace SwitchManagment.API.Controllers
             }
         }
 
-        
+
 
         private async Task<bool> SwitchEntityExists(int id) =>
             await _context.Switches.AnyAsync(e => e.Id == id);
