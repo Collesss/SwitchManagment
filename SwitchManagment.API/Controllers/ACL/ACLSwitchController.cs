@@ -29,7 +29,7 @@ namespace SwitchManagment.API.Controllers.ACL
         public async Task<ActionResult<ACESwitchResponse>> GetACE([Range(1, int.MaxValue)][FromRoute] int id) =>
             (await _context.ACLSwitches.FindAsync(id)) is ACESwitchEntity ace ? 
             Ok(_mapper.Map<ACESwitchResponse>(ace)) : 
-            Problem(detail: "ACE switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+            Problem(detail: "ACE with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
 
 
         [HttpPost]
@@ -62,7 +62,7 @@ namespace SwitchManagment.API.Controllers.ACL
             }
             catch (DbUpdateConcurrencyException)
             {
-                return Problem(detail: "ACE switch with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
+                return Problem(detail: "ACE with this 'id' not exist.", statusCode: StatusCodes.Status404NotFound);
             }
         }
     }
